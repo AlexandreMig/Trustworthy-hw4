@@ -334,8 +334,14 @@ int main (int argc, char* argv[])
     Send_via_ZMQ(signature_Alice, siglen);
 
     // 5. Alice receives Bob's ECDH public key and his signature on that from Bob
-    char *Bob_DH_PK_hex = Receive_via_ZMQ();
-    unsigned char *signature_Bob = Receive_via_ZMQ();
+    unsigned char Bob_DH_PK_hex[131];
+    int Bob_DH_PK_hex_len;
+    Receive_via_ZMQ(Bob_DH_PK_hex, &Bob_DH_PK_hex_len, 131);
+    Bob_DH_PK_hex[130] = '\0';
+
+    unsigned char signature_Bob[72];
+    int siglen;
+    Receive_via_ZMQ(signature_Bob, &siglen, 72);
 
     // 6. Alice verifies the received signature on the received ECDH public key
     unsigned char digest_Bob[SHA256_DIGEST_LENGTH];
