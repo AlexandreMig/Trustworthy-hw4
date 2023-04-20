@@ -289,10 +289,7 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 
 int main (int argc, char* argv[])
 {
-    BN_CTX *bn_ctx;
-    bn_ctx = BN_CTX_new();
-
-    int fileLen;
+    BN_CTX *bn_ctx = BN_CTX_new();
     BIGNUM *A = BN_new();
     BIGNUM *Y = BN_new();
     EC_POINT *QA = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
@@ -300,11 +297,14 @@ int main (int argc, char* argv[])
     EC_POINT *QB = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
     EC_POINT *QZ = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
 
+    int fileLen_Alice_DH_SK, fileLen_Alice_DH_PK, fileLen_Alice_DSA_SK, fileLen_Alice_DSA_PK;
+
     // 1. Alice reads all her keys (ECDSA and ECDH keys) from the files
-    char *Alice_DH_SK_hex = Read_File("Alice_DH_SK.txt", &fileLen);
-    char *Alice_DH_PK_hex = Read_File("Alice_DH_PK.txt", &fileLen);
-    char *Alice_DSA_SK_hex = Read_File("Alice_DSA_SK.txt", &fileLen);
-    char *Alice_DSA_PK_hex = Read_File("Alice_DSA_PK.txt", &fileLen);
+    char *Alice_DH_SK_hex = Read_File("Alice_DH_SK.txt", &fileLen_Alice_DH_SK);
+    char *Alice_DH_PK_hex = Read_File("Alice_DH_PK.txt", &fileLen_Alice_DH_PK);
+    char *Alice_DSA_SK_hex = Read_File("Alice_DSA_SK.txt", &fileLen_Alice_DSA_SK);
+    char *Alice_DSA_PK_hex = Read_File("Alice_DSA_PK.txt", &fileLen_Alice_DSA_PK);
+
 
     BN_hex2bn(&A, Alice_DH_SK_hex);
     BN_hex2bn(&Y, Alice_DSA_SK_hex);
@@ -312,7 +312,8 @@ int main (int argc, char* argv[])
     EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)), Alice_DSA_PK_hex, QY, bn_ctx);
 
     // 2. Alice reads Bob's ECDSA public key from the files
-    char *Bob_DSA_PK_hex = Read_File("Bob_DSA_PK.txt", &fileLen);
+    int fileLen_Bob_DSA_PK;
+    char *Bob_DSA_PK_hex = Read_File("Bob_DSA_PK.txt", &fileLen_Bob_DSA_PK);
     EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)), Bob_DSA_PK_hex, QZ, bn_ctx);
 
     // 3. Alice computes the signature on her ECDH public key
@@ -344,6 +345,8 @@ int main (int argc, char* argv[])
     Receive_via_ZMQ(signature_Bob, &siglen, 72);
 
     // 6. Alice verifies the received signature on the received ECDH public key
+    EC_KEY *ECDSA_key_Bob = EC_KEY_new_by_curve_name(NID_secp256k1);
+    EC_KEY_set_public_key(ECDSA_key_Bob, QZ);
     unsigned char digest_Bob[SHA256_DIGEST_LENGTH];
     SHA256((unsigned char *)Bob_DH_PK_hex, strlen(Bob_DH_PK_hex), digest_Bob);
     int verify_status = ECDSA_verify(0, digest_Bob, SHA256_DIGEST_LENGTH, signature_Bob, siglen, ECDSA_key_Bob);
