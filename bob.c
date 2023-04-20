@@ -288,12 +288,14 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 **************************************************************/
 int main (int argc, char* argv[])
 {
-    // Load keys from files
+    // 1. Load keys from files
     EC_KEY *bob_dsa = Load_ECDSA_Keys("Bob_DSA_SK.txt", "Bob_DSA_PK.txt");
-    EC_KEY *bob_dh = Load_ECDH_Keys("Bob_DH_SK.txt", "Bob_DH_PK.txt";
+    EC_KEY *bob_dh = Load_ECDH_Keys("Bob_DH_SK.txt", "Bob_DH_PK.txt");
+    
+    // 2. Read Alice's ECDSA public key from the file
     EC_KEY *alice_dsa_pk = Load_ECDSA_Public_Key("Alice_DSA_PK.txt");
 
-    // Sign Bob's ECDH public key
+    // 3. Sign Bob's ECDH public key
     unsigned char sig_b[ECDSA_size(bob_dsa)];
     unsigned int sig_b_len;
     unsigned char ecdh_pub_b_hex[2 * EC_POINT_point2oct(EC_KEY_get0_group(bob_dh), EC_KEY_get0_public_key(bob_dh), EC_KEY_get_conv_form(bob_dh), NULL, 0, NULL) + 1];
@@ -316,7 +318,7 @@ int main (int argc, char* argv[])
     zmq_send(socket, ecdh_pub_b_hex, strlen((const char *)ecdh_pub_b_hex), 0);
     zmq_send(socket, sig_b, sig_b_len, 0);
 
-    // Receive Alice's ECDH public key and signature
+    // 4. Receive Alice's ECDH public key and signature
     char ecdh_pub_a_hex[131];
     unsigned char sig_a[ECDSA_size(alice_dsa_pk)];
     int sig_a_len;
@@ -325,7 +327,7 @@ int main (int argc, char* argv[])
     ecdh_pub_a_hex[130] = '\0';
     sig_a_len = zmq_recv(socket, sig_a, ECDSA_size(alice_dsa_pk), 0);
 
-    // Verify Alice's signature on her ECDH public key
+    // 5. Verify Alice's signature on her ECDH public key
     unsigned char hash_a[SHA256_DIGEST_LENGTH];
     SHA256((unsigned char *)ecdh_pub_a_hex, strlen(ecdh_pub_a_hex), hash_a);
     int verification_result = ECDSA_verify(0, hash_a, SHA256_DIGEST_LENGTH, sig_a, sig_a_len, alice_dsa_pk);
@@ -339,9 +341,9 @@ int main (int argc, char* argv[])
         fclose(verification_file);
         return 0;
     }
-     fclose(verification_file);
+    fclose(verification_file);
 
-    // Calculate the Bob-Alice-DH key agreement
+    // 6. If the signature is verified, then Alice continues. Otherwise, it aborts.
     EC_POINT *Q_A = EC_POINT_new(EC_KEY_get0_group(bob_dh));
     Convert_Hex_to_Point(ecdh_pub_a_hex, Q_A, EC_KEY_get0_group(bob_dh));
 
