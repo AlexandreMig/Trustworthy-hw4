@@ -333,15 +333,12 @@ int main (int argc, char* argv[])
     int verification_result = ECDSA_verify(0, hash_a, SHA256_DIGEST_LENGTH, sig_a, sig_a_len, alice_dsa_pk);
 
     // Save verification result to a file
-    FILE *verification_file = fopen("Verification_Result_Bob.txt", "w");
     if (verification_result == 1) {
-        fprintf(verification_file, "Successful Verification on Bob Side\n");
+        Write_File("Verification_Result_Bob.txt", "Successful Verification on Bob Side\n");
     } else {
-        fprintf(verification_file, "Verification Failed on Bob Side\n");
-        fclose(verification_file);
+        Write_File("Verification_Result_Bob.txt", "Verification Failed on Bob Side\n");
         return 0;
     }
-    fclose(verification_file);
 
     // 6. If the signature is verified, then Alice continues. Otherwise, it aborts.
     EC_POINT *Q_A = EC_POINT_new(EC_KEY_get0_group(bob_dh));
