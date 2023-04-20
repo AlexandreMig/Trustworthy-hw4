@@ -334,7 +334,8 @@ int main (int argc, char* argv[])
     Send_via_ZMQ(signature_Alice, siglen);
 
     // 5. Alice receives Bob's ECDH public key and his signature on that from Bob
-    // This part should be implemented in the Bob's side, and Alice should receive the data through ZeroMQ
+    char *Bob_DH_PK_hex = Receive_via_ZMQ();
+    unsigned char *signature_Bob = Receive_via_ZMQ();
 
     // 6. Alice verifies the received signature on the received ECDH public key
     unsigned char digest_Bob[SHA256_DIGEST_LENGTH];
@@ -343,7 +344,7 @@ int main (int argc, char* argv[])
     if (verify_status == 1) {
         Write_File("Verification_Result_Alice.txt", "Successful Verification on Alice Side");
     } else {
-        Write_File("Verification_Result_Alice.txt", "Verification")
+        Write_File("Verification_Result_Alice.txt", "Verification");
         exit(1); // Abort the process if the verification fails
     }
 
