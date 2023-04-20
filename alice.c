@@ -354,7 +354,7 @@ int main (int argc, char* argv[])
         Write_File("Verification_Result_Alice.txt", "Successful Verification on Alice Side");
     } else {
         Write_File("Verification_Result_Alice.txt", "Verification");
-        exit(1); // Abort the process if the verification fails
+        return 0;
     }
 
     // 7. If the verification is successful, she calculates the Alice-Bob-DH key agreement
