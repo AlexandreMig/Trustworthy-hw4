@@ -42,8 +42,8 @@ _______________________________________________________________________________*
 /*================================
     Creating Context for BIGNUM
 ==================================*/
-BN_CTX *bn_ctx;
-bn_ctx = BN_CTX_new();
+//BN_CTX *bn_ctx;
+//bn_ctx = BN_CTX_new();
 
 /*============================
     Convert BIGNUM to HEX
@@ -108,8 +108,8 @@ int EC_POINT_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *n, const EC_P
 */
 EC_KEY *EC_KEY_new_by_curve_name(int nid);
  //For DSA and DH, use the following curve:
- eckey_DSA = EC_KEY_new_by_curve_name(NID_secp192k1);
- eckey_DH = EC_KEY_new_by_curve_name(NID_secp192k1);
+ //eckey_DSA = EC_KEY_new_by_curve_name(NID_secp192k1);
+ //eckey_DH = EC_KEY_new_by_curve_name(NID_secp192k1);
 
  /*================================
     Getting the group from EC_KEY
@@ -289,13 +289,20 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 
 int main (int argc, char* argv[])
 {
-    BN_CTX *bn_ctx = BN_CTX_new();
+    BN_CTX *bn_ctx = NULL;
+    bn_ctx = BN_CTX_new();
+
+    //BN_CTX *bn_ctx = BN_CTX_new();
     BIGNUM *A = BN_new();
     BIGNUM *Y = BN_new();
     EC_POINT *QA = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
     EC_POINT *QY = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
     EC_POINT *QB = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
     EC_POINT *QZ = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
+
+    EC_KEY *eckey_DSA = EC_KEY_new_by_curve_name(NID_secp192k1);
+    EC_KEY *eckey_DH = EC_KEY_new_by_curve_name(NID_secp192k1);
+
 
     int fileLen_Alice_DH_SK, fileLen_Alice_DH_PK, fileLen_Alice_DSA_SK, fileLen_Alice_DSA_PK;
 
@@ -341,7 +348,7 @@ int main (int argc, char* argv[])
     Bob_DH_PK_hex[130] = '\0';
 
     unsigned char signature_Bob[72];
-    int siglen;
+    //int siglen;
     Receive_via_ZMQ(signature_Bob, &siglen, 72);
 
     // 6. Alice verifies the received signature on the received ECDH public key
