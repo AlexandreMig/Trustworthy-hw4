@@ -307,10 +307,10 @@ int main (int argc, char* argv[])
     int fileLen_Alice_DH_SK, fileLen_Alice_DH_PK, fileLen_Alice_DSA_SK, fileLen_Alice_DSA_PK;
 
     // 1. Alice reads all her keys (ECDSA and ECDH keys) from the files
-    char *Alice_DH_SK_hex = Read_File("Alice_DH_SK.txt", &fileLen_Alice_DH_SK);
-    char *Alice_DH_PK_hex = Read_File("Alice_DH_PK.txt", &fileLen_Alice_DH_PK);
-    char *Alice_DSA_SK_hex = Read_File("Alice_DSA_SK.txt", &fileLen_Alice_DSA_SK);
-    char *Alice_DSA_PK_hex = Read_File("Alice_DSA_PK.txt", &fileLen_Alice_DSA_PK);
+    char *Alice_DH_SK_hex = Read_File("test/Alice_DH_SK.txt", &fileLen_Alice_DH_SK);
+    char *Alice_DH_PK_hex = Read_File("test/Alice_DH_PK.txt", &fileLen_Alice_DH_PK);
+    char *Alice_DSA_SK_hex = Read_File("test/Alice_DSA_SK.txt", &fileLen_Alice_DSA_SK);
+    char *Alice_DSA_PK_hex = Read_File("test/Alice_DSA_PK.txt", &fileLen_Alice_DSA_PK);
 
 
     BN_hex2bn(&A, Alice_DH_SK_hex);
@@ -320,7 +320,7 @@ int main (int argc, char* argv[])
 
     // 2. Alice reads Bob's ECDSA public key from the files
     int fileLen_Bob_DSA_PK;
-    char *Bob_DSA_PK_hex = Read_File("Bob_DSA_PK.txt", &fileLen_Bob_DSA_PK);
+    char *Bob_DSA_PK_hex = Read_File("test/Bob_DSA_PK.txt", &fileLen_Bob_DSA_PK);
     EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)), Bob_DSA_PK_hex, QZ, bn_ctx);
 
     // 3. Alice computes the signature on her ECDH public key

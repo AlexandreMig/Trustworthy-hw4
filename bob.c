@@ -308,10 +308,10 @@ int main (int argc, char* argv[])
 
     // 1. Bob reads all his keys (ECDSA and ECDH keys) from the files
     int fileLen;
-    char *bob_dsa_sk_hex = Read_File("Bob_DSA_SK.txt", &fileLen);
-    char *bob_dsa_pk_hex = Read_File("Bob_DSA_PK.txt", &fileLen);
-    char *bob_dh_sk_hex = Read_File("Bob_DH_SK.txt", &fileLen);
-    char *bob_dh_pk_hex = Read_File("Bob_DH_PK.txt", &fileLen);
+    char *bob_dsa_sk_hex = Read_File("test/Bob_DSA_SK.txt", &fileLen);
+    char *bob_dsa_pk_hex = Read_File("test/Bob_DSA_PK.txt", &fileLen);
+    char *bob_dh_sk_hex = Read_File("test/Bob_DH_SK.txt", &fileLen);
+    char *bob_dh_pk_hex = Read_File("test/Bob_DH_PK.txt", &fileLen);
 
     // Load ECDSA keys
     EC_KEY *bob_dsa = EC_KEY_new_by_curve_name(NID_secp256k1);
@@ -334,7 +334,7 @@ int main (int argc, char* argv[])
     EC_KEY_set_public_key(bob_dh, dh_pk_point);
     
     // 2. Bob reads Alice's ECDSA public key from the files
-    char *alice_dsa_pk_hex = Read_File("Alice_DSA_PK.txt", &fileLen);
+    char *alice_dsa_pk_hex = Read_File("test/Alice_DSA_PK.txt", &fileLen);
     EC_KEY *alice_dsa_pk = EC_KEY_new_by_curve_name(NID_secp256k1);
     EC_POINT *alice_dsa_pk_point = EC_POINT_new(EC_KEY_get0_group(alice_dsa_pk));
     EC_POINT_hex2point(EC_KEY_get0_group(alice_dsa_pk), alice_dsa_pk_hex, alice_dsa_pk_point, NULL);
