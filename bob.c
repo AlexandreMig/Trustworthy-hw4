@@ -282,6 +282,23 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
     return temp;
 }
 
+void Save_Signature(char filename[], unsigned char sig[], int sig_len) {
+    char sig_hex[2 * sig_len + 1];
+    Convert_to_Hex(sig_hex, sig, sig_len);
+    Write_File(filename, sig_hex);
+}
+
+void Convert_Hex_to_Point(char hex[], EC_POINT *point, const EC_GROUP *group) {
+    BN_CTX *ctx = BN_CTX_new();
+    EC_POINT_hex2point(group, hex, point, ctx);
+    BN_CTX_free(ctx);
+}
+
+void Save_DH_Key_Agreement(char filename[], EC_POINT *point, const EC_GROUP *group) {
+    char *hex = EC_POINT_point2hex(group, point, EC_GROUP_get_point_conversion_form(group), NULL);
+    Write_File(filename, hex);
+    OPENSSL_free(hex);
+}
 
 /*************************************************************
 						M A I N
@@ -332,7 +349,7 @@ int main (int argc, char* argv[])
     EC_POINT_point2oct(EC_KEY_get0_group(bob_dh), EC_KEY_get0_public_key(bob_dh), EC_KEY_get_conv_form(bob_dh), ecdh_pub_b_oct, ecdh_pub_b_oct_len, NULL);
     char ecdh_pub_b_hex[2 * ecdh_pub_b_oct_len + 1];
     Convert_to_Hex(ecdh_pub_b_hex, ecdh_pub_b_oct, ecdh_pub_b_oct_len);
-    
+
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256(ecdh_pub_b_hex, strlen((const char *)ecdh_pub_b_hex), hash);
     ECDSA_sign(0, hash, SHA256_DIGEST_LENGTH, sig_b, &sig_b_len, bob_dsa);
