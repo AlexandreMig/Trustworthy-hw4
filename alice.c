@@ -337,11 +337,11 @@ int main (int argc, char* argv[])
     Convert_to_Hex(signature_Alice_hex, signature_Alice, siglen);
     Write_File("Signature_Alice.txt", signature_Alice_hex);
 
-    // 4. Alice sends her ECDH public key and the signature to Bob over ZeroMQ
+    // Alice sends her ECDH public key and the signature to Bob over ZeroMQ
     Send_via_ZMQ((unsigned char *)Alice_DH_PK_hex, strlen(Alice_DH_PK_hex));
     Send_via_ZMQ(signature_Alice, siglen);
 
-    // 5. Alice receives Bob's ECDH public key and his signature on that from Bob
+    // 4. Alice receives Bob's ECDH public key and his signature on that from Bob
     unsigned char Bob_DH_PK_hex[131];
     int Bob_DH_PK_hex_len;
     Receive_via_ZMQ(Bob_DH_PK_hex, &Bob_DH_PK_hex_len, 131);
@@ -351,11 +351,13 @@ int main (int argc, char* argv[])
     //int siglen;
     Receive_via_ZMQ(signature_Bob, &siglen, 72);
 
-    // 6. Alice verifies the received signature on the received ECDH public key
+    // 5. Alice verifies the received signature on the received ECDH public key
     EC_KEY *ECDSA_key_Bob = EC_KEY_new_by_curve_name(NID_secp256k1);
     EC_KEY_set_public_key(ECDSA_key_Bob, QZ);
     unsigned char digest_Bob[SHA256_DIGEST_LENGTH];
     SHA256((unsigned char *)Bob_DH_PK_hex, strlen(Bob_DH_PK_hex), digest_Bob);
+    
+    // 6. If the signature is verified, then Bob continues. Otherwise, it aborts. 
     int verify_status = ECDSA_verify(0, digest_Bob, SHA256_DIGEST_LENGTH, signature_Bob, siglen, ECDSA_key_Bob);
     if (verify_status == 1) {
         Write_File("Verification_Result_Alice.txt", "Successful Verification on Alice Side");
