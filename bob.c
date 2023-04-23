@@ -394,8 +394,6 @@ int main (int argc, char* argv[])
     EC_KEY_free(alice_dsa_pk);
     EC_POINT_free(Q_A);
     EC_POINT_free(K_AB_B);
-    zmq_close(socket);
-    zmq_ctx_destroy(context);
 
     return 0;
 }
