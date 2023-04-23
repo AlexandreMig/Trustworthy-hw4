@@ -252,31 +252,36 @@ void Convert_to_Hex(char output[], unsigned char input[], int inputlength)
 /*============================
         Sending via ZeroMQ 
 ==============================*/
-void Send_via_ZMQ(unsigned char send1[], int sendlen1, unsigned char send2[], int sendlen2) {
-    void *context = zmq_ctx_new();
-    void *requester = zmq_socket(context, ZMQ_REQ);
-    printf("Connecting to Bob and sending the messages...\n");
-    zmq_connect(requester, "tcp://localhost:5555");
-    zmq_send(requester, send1, sendlen1, ZMQ_SNDMORE);
-    zmq_send(requester, send2, sendlen2, 0);
-    zmq_close(requester);
-    zmq_ctx_destroy(context);
+void Send_via_ZMQ(unsigned char send[], int sendlen)
+{
+	void *context = zmq_ctx_new ();					            //creates a socket to talk to Bob
+    void *requester = zmq_socket (context, ZMQ_REQ);		    //creates requester that sends the messages
+   	printf("Connecting to Bob and sending the message...\n");
+    zmq_connect (requester, "tcp://localhost:5555");		    //make outgoing connection from socket
+    zmq_send (requester, send, sendlen, 0);			    	    //send msg to Bob
+    zmq_close (requester);						                //closes the requester socket
+    zmq_ctx_destroy (context);					                //destroys the context & terminates all 0MQ processes
 }
 
 /*============================
         Receiving via ZeroMQ 
 ==============================*/
-void Receive_via_ZMQ(unsigned char *receive1, int *receivelen1, unsigned char *receive2, int *receivelen2, int limit) {
-    void *context = zmq_ctx_new();
-    void *responder = zmq_socket(context, ZMQ_REP);
-    int rc = zmq_bind(responder, "tcp://*:5555");
-    int received_length1 = zmq_recv(responder, receive1, limit, 0);
-    *receivelen1 = received_length1;
-    int received_length2 = zmq_recv(responder, receive2, limit, 0);
-    *receivelen2 = received_length2;
-    zmq_close(responder);
-    zmq_ctx_destroy(context);
+unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int limit) 
+{
+	void *context = zmq_ctx_new ();			        	                                 //creates a socket to talk to Alice
+    void *responder = zmq_socket (context, ZMQ_REP);                                   	//creates responder that receives the messages
+   	int rc = zmq_bind (responder, "tcp://*:5555");	                                	//make outgoing connection from socket
+    int received_length = zmq_recv (responder, receive, limit, 0);	                  	//receive message from Alice
+    unsigned char *temp = (unsigned char*) malloc(received_length);
+    for(int i=0; i<received_length; i++){
+        temp[i] = receive[i];
+    }
+    *receivelen = received_length;
+    printf("Received Message: %s\n", receive);
+    printf("Size is %d\n", received_length);
+    return temp;
 }
+
 
 /*************************************************************
 						M A I N
@@ -333,13 +338,18 @@ int main (int argc, char* argv[])
     Write_File("Signature_Alice.txt", signature_Alice_hex);
 
     // 4. Alice sends her ECDH public key and the signature to Bob over ZeroMQ
-    Send_via_ZMQ((unsigned char *)Alice_DH_PK_hex, strlen(Alice_DH_PK_hex), signature_Alice, siglen);
+    Send_via_ZMQ((unsigned char *)Alice_DH_PK_hex, strlen(Alice_DH_PK_hex));
+    Send_via_ZMQ(signature_Alice, siglen);
 
     // 5. Alice receives Bob's ECDH public key and his signature on that from Bob
     unsigned char Bob_DH_PK_hex[131];
     int Bob_DH_PK_hex_len;
-    Receive_via_ZMQ(Bob_DH_PK_hex, &Bob_DH_PK_hex_len, signature_Bob, &siglen, 131);
+    Receive_via_ZMQ(Bob_DH_PK_hex, &Bob_DH_PK_hex_len, 131);
     Bob_DH_PK_hex[130] = '\0';
+
+    unsigned char signature_Bob[72];
+    //int siglen;
+    Receive_via_ZMQ(signature_Bob, &siglen, 72);
 
     // 6. Alice verifies the received signature on the received ECDH public key
     EC_KEY *ECDSA_key_Bob = EC_KEY_new_by_curve_name(NID_secp256k1);
@@ -362,22 +372,6 @@ int main (int argc, char* argv[])
     EC_POINT_mul(EC_KEY_get0_group(ECDH_key_Alice), KAB, NULL, QB, A, bn_ctx);
     char *KAB_hex = EC_POINT_point2hex(EC_KEY_get0_group(ECDH_key_Alice), KAB, EC_KEY_get_conv_form(ECDH_key_Alice), bn_ctx);
     Write_File("DH_Key_Agreement_Alice.txt", KAB_hex);
-
-    // Clean up resources
-    BN_free(A);
-    BN_free(Y);
-    EC_POINT_free(QA);
-    EC_POINT_free(QY);
-    EC_POINT_free(QZ);
-    EC_POINT_free(KAB);
-    BN_CTX_free(bn_ctx);
-    EC_KEY_free(ECDH_key_Alice);
-    EC_KEY_free(ECDSA_key_Alice);
-    free(Alice_DH_SK_hex);
-    free(Alice_DH_PK_hex);
-    free(Alice_DSA_SK_hex);
-    free(Alice_DSA_PK_hex);
-    free(Bob_DSA_PK_hex);
 
     return 0;
 }
