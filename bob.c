@@ -324,12 +324,15 @@ int main (int argc, char* argv[])
     EC_KEY_set_public_key(alice_dsa_pk, alice_dsa_pk_point);
 
     
-    // 3. Sign Bob's ECDH public key
+     // 3. Sign Bob's ECDH public key
     unsigned char sig_b[ECDSA_size(bob_dsa)];
     unsigned int sig_b_len;
-    unsigned char ecdh_pub_b_hex[2 * EC_POINT_point2oct(EC_KEY_get0_group(bob_dh), EC_KEY_get0_public_key(bob_dh), EC_KEY_get_conv_form(bob_dh), NULL, 0, NULL) + 1];
-    Convert_to_Hex((char *)ecdh_pub_b_hex, EC_POINT_point2oct(EC_KEY_get0_group(bob_dh), EC_KEY_get0_public_key(bob_dh), EC_KEY_get_conv_form(bob_dh), NULL, 0, NULL));
-
+    int ecdh_pub_b_oct_len = EC_POINT_point2oct(EC_KEY_get0_group(bob_dh), EC_KEY_get0_public_key(bob_dh), EC_KEY_get_conv_form(bob_dh), NULL, 0, NULL);
+    unsigned char ecdh_pub_b_oct[ecdh_pub_b_oct_len];
+    EC_POINT_point2oct(EC_KEY_get0_group(bob_dh), EC_KEY_get0_public_key(bob_dh), EC_KEY_get_conv_form(bob_dh), ecdh_pub_b_oct, ecdh_pub_b_oct_len, NULL);
+    char ecdh_pub_b_hex[2 * ecdh_pub_b_oct_len + 1];
+    Convert_to_Hex(ecdh_pub_b_hex, ecdh_pub_b_oct, ecdh_pub_b_oct_len);
+    
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256(ecdh_pub_b_hex, strlen((const char *)ecdh_pub_b_hex), hash);
     ECDSA_sign(0, hash, SHA256_DIGEST_LENGTH, sig_b, &sig_b_len, bob_dsa);
