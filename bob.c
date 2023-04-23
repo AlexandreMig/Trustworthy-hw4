@@ -42,8 +42,8 @@ _______________________________________________________________________________*
 /*================================
     Creating Context for BIGNUM
 ==================================*/
-BN_CTX *bn_ctx;
-bn_ctx = BN_CTX_new();
+// BN_CTX *bn_ctx;
+// bn_ctx = BN_CTX_new();
 
 /*============================
     Convert BIGNUM to HEX
@@ -108,8 +108,8 @@ int EC_POINT_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *n, const EC_P
 */
 EC_KEY *EC_KEY_new_by_curve_name(int nid);
  //For DSA and DH, use the following curve:
- eckey_DSA = EC_KEY_new_by_curve_name(NID_secp192k1);
- eckey_DH = EC_KEY_new_by_curve_name(NID_secp192k1);
+//  eckey_DSA = EC_KEY_new_by_curve_name(NID_secp192k1);
+//  eckey_DH = EC_KEY_new_by_curve_name(NID_secp192k1);
 
  /*================================
     Getting the group from EC_KEY
@@ -287,20 +287,48 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 						M A I N
 **************************************************************/
 int main (int argc, char* argv[])
-{
-    // 1. Load keys from files
-    EC_KEY *bob_dsa = Load_ECDSA_Keys("Bob_DSA_SK.txt", "Bob_DSA_PK.txt");
-    EC_KEY *bob_dh = Load_ECDH_Keys("Bob_DH_SK.txt", "Bob_DH_PK.txt");
-    
-    // 2. Read Alice's ECDSA public key from the file
-    EC_KEY *alice_dsa_pk = Load_ECDSA_Public_Key("Alice_DSA_PK.txt");
+{   
 
+    // 1. Bob reads all his keys (ECDSA and ECDH keys) from the files
+    int fileLen;
+    char *bob_dsa_sk_hex = Read_File("Bob_DSA_SK.txt", &fileLen);
+    char *bob_dsa_pk_hex = Read_File("Bob_DSA_PK.txt", &fileLen);
+    char *bob_dh_sk_hex = Read_File("Bob_DH_SK.txt", &fileLen);
+    char *bob_dh_pk_hex = Read_File("Bob_DH_PK.txt", &fileLen);
+
+    // Load ECDSA keys
+    EC_KEY *bob_dsa = EC_KEY_new_by_curve_name(NID_secp256k1);
+    BIGNUM *dsa_sk_bn = BN_new();
+    BN_hex2bn(&dsa_sk_bn, bob_dsa_sk_hex);
+    EC_KEY_set_private_key(bob_dsa, dsa_sk_bn);
+
+    EC_POINT *dsa_pk_point = EC_POINT_new(EC_KEY_get0_group(bob_dsa));
+    EC_POINT_hex2point(EC_KEY_get0_group(bob_dsa), bob_dsa_pk_hex, dsa_pk_point, NULL);
+    EC_KEY_set_public_key(bob_dsa, dsa_pk_point);
+
+    // Load ECDH keys
+    EC_KEY *bob_dh = EC_KEY_new_by_curve_name(NID_secp256k1);
+    BIGNUM *dh_sk_bn = BN_new();
+    BN_hex2bn(&dh_sk_bn, bob_dh_sk_hex);
+    EC_KEY_set_private_key(bob_dh, dh_sk_bn);
+
+    EC_POINT *dh_pk_point = EC_POINT_new(EC_KEY_get0_group(bob_dh));
+    EC_POINT_hex2point(EC_KEY_get0_group(bob_dh), bob_dh_pk_hex, dh_pk_point, NULL);
+    EC_KEY_set_public_key(bob_dh, dh_pk_point);
+    
+    // 2. Bob reads Alice's ECDSA public key from the files
+    char *alice_dsa_pk_hex = Read_File("Alice_DSA_PK.txt", &fileLen);
+    EC_KEY *alice_dsa_pk = EC_KEY_new_by_curve_name(NID_secp256k1);
+    EC_POINT *alice_dsa_pk_point = EC_POINT_new(EC_KEY_get0_group(alice_dsa_pk));
+    EC_POINT_hex2point(EC_KEY_get0_group(alice_dsa_pk), alice_dsa_pk_hex, alice_dsa_pk_point, NULL);
+    EC_KEY_set_public_key(alice_dsa_pk, alice_dsa_pk_point);
+
+    
     // 3. Sign Bob's ECDH public key
     unsigned char sig_b[ECDSA_size(bob_dsa)];
     unsigned int sig_b_len;
     unsigned char ecdh_pub_b_hex[2 * EC_POINT_point2oct(EC_KEY_get0_group(bob_dh), EC_KEY_get0_public_key(bob_dh), EC_KEY_get_conv_form(bob_dh), NULL, 0, NULL) + 1];
     Convert_to_Hex((char *)ecdh_pub_b_hex, EC_POINT_point2oct(EC_KEY_get0_group(bob_dh), EC_KEY_get0_public_key(bob_dh), EC_KEY_get_conv_form(bob_dh), NULL, 0, NULL));
-
 
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256(ecdh_pub_b_hex, strlen((const char *)ecdh_pub_b_hex), hash);
@@ -308,6 +336,7 @@ int main (int argc, char* argv[])
 
     // Save Bob's signature to a file
     Save_Signature("Signature_Bob.txt", sig_b, sig_b_len);
+
 
     // Prepare ZeroMQ context and socket
     void *context = zmq_ctx_new();
