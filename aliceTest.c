@@ -364,18 +364,19 @@ int main(int argc,char *argv[]){
     // 6. If the signature is verified, then Bob continues. Otherwise, it aborts. 
     if (ECDSA_verify(0, digest , SHA256_DIGEST_LENGTH , signature_Bob, combined_message_len - fileLen_Alice_DH_PK , eckey_DSA)==1){
         Write_File("Verification_Result_Alice.txt","Successful Verification on Alice Side");
-
     }
     else {
         Write_File("Verification_Result_Alice.txt","Verification Failed on Alice Side");
+        return 0;
     }
 
+    // 7. If the verification is successful, she calculates the Alice-Bob-DH key agreement
     BN_CTX * comPairRecvPubKeyCtx = BN_CTX_new();
     QZ = EC_POINT_hex2point(DSA_G,Bob_DH_PK_hex, QZ ,NULL);
-    EC_POINT * multPoint = EC_POINT_new(DH_G) ; 
-    EC_POINT_mul(DH_G, multPoint , NULL, QZ, A, NULL);
-    unsigned char * dhKeyAgreement = EC_POINT_point2hex(DH_G, multPoint, POINT_CONVERSION_UNCOMPRESSED, NULL); 
-    Write_File("DH_Key_Agreement_Alice.txt",dhKeyAgreement);
+    EC_POINT * KAB = EC_POINT_new(DH_G) ; 
+    EC_POINT_mul(DH_G, KAB , NULL, QZ, A, NULL);
+    unsigned char* KAB_hex = EC_POINT_point2hex(DH_G, KAB, POINT_CONVERSION_UNCOMPRESSED, NULL); 
+    Write_File("DH_Key_Agreement_Alice.txt", KAB_hex);
     
     return 0;
 }
