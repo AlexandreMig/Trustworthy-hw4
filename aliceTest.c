@@ -349,7 +349,7 @@ int main(int argc,char *argv[]){
     // 4. Alice receives Bob's ECDH public key and his signature on that from Bob
     unsigned char combined_message_received[1000];
     unsigned int combined_message_len;
-    unsigned char * recPacket = Receive_via_ZMQ(combined_message_received, &combined_message_len , 1000);
+    Receive_via_ZMQ(combined_message_received, &combined_message_len , 1000);
 
     
     // Split the combined message into Bob_DH_PK_hex and signature_Bob
@@ -357,8 +357,8 @@ int main(int argc,char *argv[]){
 
     unsigned char * recevidPublicKey = malloc(fileLen_Alice_DH_PK);
     unsigned char * receivedSignature = malloc(recvSignatureLen);
-    memcpy(recevidPublicKey, recPacket,fileLen_Alice_DH_PK);
-    memcpy(receivedSignature , recPacket + fileLen_Alice_DH_PK, recvSignatureLen);
+    memcpy(recevidPublicKey, combined_message_received,fileLen_Alice_DH_PK);
+    memcpy(receivedSignature , combined_message_received + fileLen_Alice_DH_PK, recvSignatureLen);
 
 
     /* Verifying */
