@@ -313,7 +313,7 @@ int main(int argc,char *argv[]){
 
     // 2. Alice reads Bob's ECDSA public key from the files
     int fileLen_Bob_DSA_PK;
-    unsigned char * Bob_DSA_PK;
+    unsigned char *Bob_DSA_PK;
 
     Bob_DSA_PK = Read_File(argv[5], &fileLen_Bob_DSA_PK);
 
@@ -332,15 +332,15 @@ int main(int argc,char *argv[]){
     unsigned char *signature_Alice = OPENSSL_malloc(siglen);
 
     ECDSA_sign(0, digest , SHA256_DIGEST_LENGTH , signature_Alice, &siglen , eckey_DSA);
-    unsigned char * signHex = malloc(siglen*2+1);
+    unsigned char *signHex = malloc(siglen*2+1);
     signHex[siglen*2]=0;
     Convert_to_Hex(signHex, signature_Alice, siglen);
-    Write_File("Signature_Alice.txt",signHex);
+    Write_File("Signature_Alice.txt", signHex);
 
     // Combine Alice_DH_PK_hex and signature_Alice into a single message
     unsigned char *combined_message = malloc(fileLen_Alice_DH_PK+siglen);
-    memcpy(combined_message,Alice_DH_PK,fileLen_Alice_DH_PK);
-    memcpy(combined_message+fileLen_Alice_DH_PK , signature_Alice, siglen);
+    memcpy(combined_message,Alice_DH_PK, fileLen_Alice_DH_PK);
+    memcpy(combined_message+fileLen_Alice_DH_PK, signature_Alice, siglen);
     
     // Send the combined message
     Send_via_ZMQ(combined_message,fileLen_Alice_DH_PK+siglen);
@@ -350,19 +350,19 @@ int main(int argc,char *argv[]){
     unsigned int combined_message_len;
     unsigned char *Bob_DH_PK_hex = malloc(fileLen_Alice_DH_PK);
     unsigned char *signature_Bob = malloc(combined_message_len - fileLen_Alice_DH_PK);
-    Receive_via_ZMQ(combined_message_received, &combined_message_len , 1000);
+    Receive_via_ZMQ(combined_message_received, &combined_message_len, 1000);
 
     // Split the combined message into Bob_DH_PK_hex and signature_Bob
     memcpy(Bob_DH_PK_hex, combined_message_received,fileLen_Alice_DH_PK);
     memcpy(signature_Bob , combined_message_received + fileLen_Alice_DH_PK, combined_message_len - fileLen_Alice_DH_PK);
 
     // 5. Alice verifies the received signature on the received ECDH public key
-    *digest = SHA256(Bob_DH_PK_hex,fileLen_Alice_DH_PK, digest);
+    *digest = SHA256(Bob_DH_PK_hex, fileLen_Alice_DH_PK, digest);
     EC_KEY_set_public_key(eckey_DSA, QZ);
 
 
     // 6. If the signature is verified, then Bob continues. Otherwise, it aborts. 
-    if (ECDSA_verify(0, digest , SHA256_DIGEST_LENGTH , signature_Bob, combined_message_len - fileLen_Alice_DH_PK , eckey_DSA)==1){
+    if (ECDSA_verify(0, digest , SHA256_DIGEST_LENGTH , signature_Bob, combined_message_len - fileLen_Alice_DH_PK, eckey_DSA) == 1){
         Write_File("Verification_Result_Alice.txt","Successful Verification on Alice Side");
     }
     else {
