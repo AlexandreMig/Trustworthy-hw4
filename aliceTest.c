@@ -290,25 +290,25 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 
 int main(int argc,char *argv[]){
 
-	/* Parameters */
-	unsigned char * Alice_DH_SK_hex;
-	unsigned int fileLen_Alice_DH_SK;
-	unsigned char * Alice_DH_PK;
-	unsigned int fileLen_Alice_DH_PK;
-	unsigned char * Alice_DSA_SK;
-	unsigned int fileLen_Alice_DSA_SK;
-	unsigned char * Alice_DSA_PK;
-	unsigned int fileLen_Alice_DSA_PK;
-	unsigned int fileLen_Bob_DSA_PK;
 
-	/* comPairPubKey is the Bob's ECDSA public key which is read from the file */
-	unsigned char * Bob_DSA_PK;
+    // 1. Alice reads all her keys (ECDSA and ECDH keys) from the files
+    unsigned char * Alice_DH_SK_hex;
+    unsigned int fileLen_Alice_DH_SK;
+    unsigned char * Alice_DH_PK;
+    unsigned int fileLen_Alice_DH_PK;
+    unsigned char * Alice_DSA_SK;
+    unsigned int fileLen_Alice_DSA_SK;
+    unsigned char * Alice_DSA_PK;
+    unsigned int fileLen_Alice_DSA_PK;
 
-	/* Reading the keys from the files */
-	Alice_DH_SK_hex = Read_File(argv[3], &fileLen_Alice_DH_SK); // Alice_DH_SK.txt
-	Alice_DH_PK = Read_File(argv[4], &fileLen_Alice_DH_PK); // Alice_DH_PK.
+    Alice_DH_SK_hex = Read_File(argv[3], &fileLen_Alice_DH_SK); // Alice_DH_SK.txt
+    Alice_DH_PK = Read_File(argv[4], &fileLen_Alice_DH_PK); // Alice_DH_PK.
     Alice_DSA_SK = Read_File(argv[1], &fileLen_Alice_DSA_SK); // Alice_DSA_SK.txt
     Alice_DSA_PK = Read_File(argv[2], &fileLen_Alice_DSA_PK); // Alice_DSA_PK.txt 
+
+    // 2. Alice reads Bob's ECDSA public key from the files
+    unsigned char * Bob_DSA_PK;
+    unsigned int fileLen_Bob_DSA_PK;
     Bob_DSA_PK = Read_File(argv[5], &fileLen_Bob_DSA_PK); // Bob_DSA_PK.txt
 
     /* Creating the keys for DH and ECDSA */
