@@ -347,13 +347,13 @@ int main(int argc,char *argv[]){
     Send_via_ZMQ(combined_message,fileLen_Alice_DH_PK+siglen);
 
     // 4. Alice receives Bob's ECDH public key and his signature on that from Bob
-    unsigned char receivBuff[1000];
-    unsigned int recvLen;
-    unsigned char * recPacket = Receive_via_ZMQ(receivBuff, &recvLen , 1000);
-	
-    // Since the signatue length is variable and there is no structure for sending,
-    // we use the fact that the public key is constant. 
-    unsigned int recvSignatureLen = recvLen - fileLen_Alice_DH_PK;
+    unsigned char combined_message_received[1000];
+    unsigned int combined_message_len;
+    unsigned char * recPacket = Receive_via_ZMQ(combined_message_received, &combined_message_len , 1000);
+
+    
+    // Split the combined message into Bob_DH_PK_hex and signature_Bob
+    unsigned int recvSignatureLen = combined_message_len - fileLen_Alice_DH_PK;
 
     unsigned char * recevidPublicKey = malloc(fileLen_Alice_DH_PK);
     unsigned char * receivedSignature = malloc(recvSignatureLen);
