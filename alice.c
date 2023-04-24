@@ -345,7 +345,7 @@ int main (int argc, char* argv[])
     // Send the combined message
     Send_via_ZMQ((unsigned char *)combined_message, strlen(Alice_DH_PK_hex) + siglen);
 
-    // 6. Alice receives Bob's ECDH public key and his signature on that from Bob
+    // 4. Alice receives Bob's ECDH public key and his signature on that from Bob
     unsigned char Bob_DH_PK_hex[131];
     unsigned char signature_Bob[72];
     unsigned char combined_message_received[131 + 72];
