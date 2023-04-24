@@ -291,6 +291,15 @@ int main(int argc,char *argv[]){
     //BN_CTX *bn_ctx = BN_CTX_new();
     BIGNUM * A = BN_new();
     BIGNUM * Y = BN_new();
+    EC_KEY *eckey_DSA = EC_KEY_new_by_curve_name(NID_secp192k1);
+    EC_KEY *eckey_DH = EC_KEY_new_by_curve_name(NID_secp192k1);
+    EC_GROUP * DSA_G = EC_KEY_get0_group(eckey_DSA);
+    EC_GROUP * DH_G = EC_KEY_get0_group(eckey_DH);
+
+    EC_POINT * ecdsaPubKeyPoint = EC_POINT_new(DSA_G);
+    EC_POINT * ecdhPubKeyPoint = EC_POINT_new(DH_G);
+    EC_POINT * comPairPubKeyPoint = EC_POINT_new(DSA_G);
+
 
     // 1. Alice reads all her keys (ECDSA and ECDH keys) from the files
     int fileLen_Alice_DH_SK, fileLen_Alice_DH_PK, fileLen_Alice_DSA_SK, fileLen_Alice_DSA_PK;
@@ -300,47 +309,35 @@ int main(int argc,char *argv[]){
     unsigned char * Alice_DSA_SK = Read_File(argv[1], &fileLen_Alice_DSA_SK);
     unsigned char * Alice_DSA_PK = Read_File(argv[2], &fileLen_Alice_DSA_PK);
 
-    // 2. Alice reads Bob's ECDSA public key from the files
-    unsigned char * Bob_DSA_PK;
-    unsigned int fileLen_Bob_DSA_PK;
-    Bob_DSA_PK = Read_File(argv[5], &fileLen_Bob_DSA_PK); // Bob_DSA_PK.txt
-
-    /* Creating the keys for DH and ECDSA */
-    EC_KEY * ecdsaKey = EC_KEY_new_by_curve_name(NID_secp192k1);
-    EC_KEY * dhKey = EC_KEY_new_by_curve_name(NID_secp192k1);
-
-    /* Getting the groups of the generated keys */
-    EC_GROUP * ecdsaKeyGroup = EC_KEY_get0_group(ecdsaKey);
-    EC_GROUP * dhKeyGroup = EC_KEY_get0_group(dhKey);
-
-    /* Converting private keys from hex to bignums */
     BN_hex2bn(&A, Alice_DH_SK_hex);
     BN_hex2bn(&Y, Alice_DSA_SK);
 
-    /* Generating points for the public keys */
-    EC_POINT * ecdsaPubKeyPoint = EC_POINT_new(ecdsaKeyGroup);
-    EC_POINT * ecdhPubKeyPoint = EC_POINT_new(dhKeyGroup);
-    EC_POINT * comPairPubKeyPoint = EC_POINT_new(ecdsaKeyGroup);
+    // 2. Alice reads Bob's ECDSA public key from the files
+    int fileLen_Bob_DSA_PK;
+    unsigned char * Bob_DSA_PK;
+
+    Bob_DSA_PK = Read_File(argv[5], &fileLen_Bob_DSA_PK);
+
 
     /* Converting public keys from hex to points */
-    ecdsaPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup, Alice_DSA_PK, ecdsaPubKeyPoint , NULL);
-    comPairPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup, Bob_DSA_PK, comPairPubKeyPoint ,NULL);
-    ecdhPubKeyPoint = EC_POINT_hex2point(dhKeyGroup, Alice_DH_PK, ecdhPubKeyPoint , NULL);
+    ecdsaPubKeyPoint = EC_POINT_hex2point(DSA_G, Alice_DSA_PK, ecdsaPubKeyPoint , NULL);
+    comPairPubKeyPoint = EC_POINT_hex2point(DSA_G, Bob_DSA_PK, comPairPubKeyPoint ,NULL);
+    ecdhPubKeyPoint = EC_POINT_hex2point(DH_G, Alice_DH_PK, ecdhPubKeyPoint , NULL);
 
     /* Setting the public and private keys */
-    EC_KEY_set_public_key(ecdsaKey,ecdsaPubKeyPoint);
-    EC_KEY_set_public_key(dhKey,ecdhPubKeyPoint);
-    EC_KEY_set_private_key(ecdsaKey, Y);
-    EC_KEY_set_private_key(dhKey,A);
+    EC_KEY_set_public_key(eckey_DSA,ecdsaPubKeyPoint);
+    EC_KEY_set_public_key(eckey_DH,ecdhPubKeyPoint);
+    EC_KEY_set_private_key(eckey_DSA, Y);
+    EC_KEY_set_private_key(eckey_DH, A);
 
     /* Computing signature on ECDH public key */
-    unsigned int signatureLen = ECDSA_size(ecdsaKey);
+    unsigned int signatureLen = ECDSA_size(eckey_DSA);
     unsigned char * signature = OPENSSL_malloc(signatureLen);
     unsigned char digestBuff[SHA256_DIGEST_LENGTH];
     unsigned char * digest = SHA256(Alice_DH_PK, strlen(Alice_DH_PK), digestBuff);
 
     /* Signing the ECDH public key using the ECDSA */
-    ECDSA_sign(0, digest , SHA256_DIGEST_LENGTH , signature, &signatureLen , ecdsaKey );
+    ECDSA_sign(0, digest , SHA256_DIGEST_LENGTH , signature, &signatureLen , eckey_DSA );
 
 
     /* Writing the signature to the file */
@@ -374,10 +371,10 @@ int main(int argc,char *argv[]){
     digest = SHA256(recevidPublicKey,fileLen_Alice_DH_PK, digestBuff);
 
     /* Verification is done via the Bob's public key */
-    EC_KEY_set_public_key(ecdsaKey,comPairPubKeyPoint);
+    EC_KEY_set_public_key(eckey_DSA, comPairPubKeyPoint);
 
 
-    if (ECDSA_verify(0, digest , SHA256_DIGEST_LENGTH , receivedSignature, recvSignatureLen , ecdsaKey )==1){
+    if (ECDSA_verify(0, digest , SHA256_DIGEST_LENGTH , receivedSignature, recvSignatureLen , eckey_DSA)==1){
 
         Write_File("Verification_Result_Alice.txt","Successful Verification on Alice Side");
 
@@ -385,12 +382,12 @@ int main(int argc,char *argv[]){
 
         /* Converting the received public key to a point */
         BN_CTX * comPairRecvPubKeyCtx = BN_CTX_new();
-        comPairPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup,recevidPublicKey, comPairPubKeyPoint ,NULL);
-        EC_POINT * multPoint = EC_POINT_new(dhKeyGroup) ; 
-        EC_POINT_mul(dhKeyGroup, multPoint , NULL, comPairPubKeyPoint, A, NULL);
+        comPairPubKeyPoint = EC_POINT_hex2point(DSA_G,recevidPublicKey, comPairPubKeyPoint ,NULL);
+        EC_POINT * multPoint = EC_POINT_new(DH_G) ; 
+        EC_POINT_mul(DH_G, multPoint , NULL, comPairPubKeyPoint, A, NULL);
 
         /* Converting the received public key to a point */
-        unsigned char * dhKeyAgreement = EC_POINT_point2hex(dhKeyGroup, multPoint, POINT_CONVERSION_UNCOMPRESSED, NULL); 
+        unsigned char * dhKeyAgreement = EC_POINT_point2hex(DH_G, multPoint, POINT_CONVERSION_UNCOMPRESSED, NULL); 
         Write_File("DH_Key_Agreement_Alice.txt",dhKeyAgreement);
     }
     else {
