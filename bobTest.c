@@ -289,16 +289,10 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 int main(int argc,char *argv[]){
 
     //BN_CTX *bn_ctx = BN_CTX_new();
-    BIGNUM *B = BN_new();
-    BIGNUM *Z = BN_new();
-    EC_KEY *eckey_DSA = EC_KEY_new_by_curve_name(NID_secp192k1);
-    EC_KEY *eckey_DH = EC_KEY_new_by_curve_name(NID_secp192k1);
-    EC_GROUP *DSA_G = EC_KEY_get0_group(eckey_DSA);
-    EC_GROUP *DH_G = EC_KEY_get0_group(eckey_DH);
-
-    EC_POINT *QY = EC_POINT_new(DSA_G);
-    EC_POINT *QB = EC_POINT_new(DH_G);
-    EC_POINT *QZ = EC_POINT_new(DSA_G);
+    BIGNUM *B = BN_new(), *Z = BN_new();
+    EC_KEY *eckey_DSA = EC_KEY_new_by_curve_name(NID_secp192k1), *eckey_DH = EC_KEY_new_by_curve_name(NID_secp192k1);
+    EC_GROUP *DSA_G = EC_KEY_get0_group(eckey_DSA), *DH_G = EC_KEY_get0_group(eckey_DH);
+    EC_POINT *QY = EC_POINT_new(DSA_G), *QB = EC_POINT_new(DH_G), *QZ = EC_POINT_new(DSA_G);
 
     // 1. Bob reads all his keys (ECDSA and ECDH keys) from the files
     int fileLen_Bob_DH_SK, fileLen_Bob_DH_PK, fileLen_Bob_DSA_SK, fileLen_Bob_DSA_PK;
@@ -345,7 +339,7 @@ int main(int argc,char *argv[]){
     // Split the combined message into Alice_DH_PK_hex and signature_Alice
     memcpy(Alice_DH_PK_hex, combined_message_received,fileLen_Bob_DH_PK);
     memcpy(signature_Bob , combined_message_received + fileLen_Bob_DH_PK, combined_message_len - fileLen_Bob_DH_PK);
-    
+
     // Combine Bob_DH_PK_hex and Bob_Alice into a single message
     unsigned char *combined_message = malloc(fileLen_Bob_DH_PK+siglen);
     memcpy(combined_message, Bob_DH_PK, fileLen_Bob_DH_PK);
