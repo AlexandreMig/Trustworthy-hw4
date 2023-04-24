@@ -286,10 +286,11 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 						M A I N
 **************************************************************/
 
-
-
 int main(int argc,char *argv[]){
 
+    //BN_CTX *bn_ctx = BN_CTX_new();
+    BIGNUM * A = BN_new();
+    BIGNUM * Y = BN_new();
 
     // 1. Alice reads all her keys (ECDSA and ECDH keys) from the files
     int fileLen_Alice_DH_SK, fileLen_Alice_DH_PK, fileLen_Alice_DSA_SK, fileLen_Alice_DSA_PK;
@@ -313,8 +314,6 @@ int main(int argc,char *argv[]){
     EC_GROUP * dhKeyGroup = EC_KEY_get0_group(dhKey);
 
     /* Converting private keys from hex to bignums */
-    BIGNUM * A = BN_new();
-    BIGNUM * Y = BN_new();
     BN_hex2bn(&A, Alice_DH_SK_hex);
     BN_hex2bn(&Y, Alice_DSA_SK);
 
@@ -334,15 +333,6 @@ int main(int argc,char *argv[]){
     EC_KEY_set_private_key(ecdsaKey, Y);
     EC_KEY_set_private_key(dhKey,A);
 
-
-    /*
-
-
-            Signature operations
-
-
-    */
-
     /* Computing signature on ECDH public key */
     unsigned int signatureLen = ECDSA_size(ecdsaKey);
     unsigned char * signature = OPENSSL_malloc(signatureLen);
@@ -360,21 +350,11 @@ int main(int argc,char *argv[]){
     Write_File("Signature_Alice.txt",signHex);
 
 
-
-    /*
-
-        Network operations
-
-    */
-
     /* Sending the ECDH public key and the signature*/
     unsigned char * buffer2send = malloc(fileLen_Alice_DH_PK+signatureLen);
     memcpy(buffer2send,Alice_DH_PK,fileLen_Alice_DH_PK);
     memcpy(buffer2send+fileLen_Alice_DH_PK , signature , signatureLen);
     Send_via_ZMQ(buffer2send,fileLen_Alice_DH_PK+signatureLen);
-
-
-    /* Receiving */
 
     unsigned char receivBuff[1000];
     unsigned int recvLen;
