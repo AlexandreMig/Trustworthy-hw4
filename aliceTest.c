@@ -295,21 +295,21 @@ int main(int argc,char *argv[]){
 	unsigned int ecdhPrivKeySize;
 	unsigned char * Alice_DH_PK;
 	unsigned int ecdhPubKeySize;
-	unsigned char * ecdsaPrivKey;
+	unsigned char * Alice_DSA_SK;
 	unsigned int ecdsaPrivKeySize;
-	unsigned char * ecdsaPubKey;
+	unsigned char * Alice_DSA_PK;
 	unsigned int ecdsaPubKeySize;
 	unsigned int comPairPubKeySize;
 
 	/* comPairPubKey is the Bob's ECDSA public key which is read from the file */
-	unsigned char * comPairPubKey;
+	unsigned char * Bob_DSA_PK;
 
 	/* Reading the keys from the files */
 	Alice_DH_SK_hex = Read_File(argv[3],&ecdhPrivKeySize); // Alice_DH_SK.txt
 	Alice_DH_PK = Read_File(argv[4],&ecdhPubKeySize); // Alice_DH_PK.
-    ecdsaPrivKey = Read_File(argv[1],&ecdsaPrivKeySize); // Alice_DSA_SK.txt
-    ecdsaPubKey = Read_File(argv[2],&ecdsaPubKeySize); // Alice_DSA_PK.txt 
-    comPairPubKey = Read_File(argv[5],&comPairPubKeySize); // Bob_DSA_PK.txt
+    Alice_DSA_SK = Read_File(argv[1],&ecdsaPrivKeySize); // Alice_DSA_SK.txt
+    Alice_DSA_PK = Read_File(argv[2],&ecdsaPubKeySize); // Alice_DSA_PK.txt 
+    Bob_DSA_PK = Read_File(argv[5],&comPairPubKeySize); // Bob_DSA_PK.txt
 
     /* Creating the keys for DH and ECDSA */
     EC_KEY * ecdsaKey = EC_KEY_new_by_curve_name(NID_secp192k1);
@@ -323,7 +323,7 @@ int main(int argc,char *argv[]){
     BIGNUM * A = BN_new();
     BIGNUM * Y = BN_new();
     BN_hex2bn(&A, Alice_DH_SK_hex);
-    BN_hex2bn(&Y,ecdsaPrivKey);
+    BN_hex2bn(&Y, Alice_DSA_SK);
 
     /* Generating points for the public keys */
     EC_POINT * ecdsaPubKeyPoint = EC_POINT_new(ecdsaKeyGroup);
@@ -331,8 +331,8 @@ int main(int argc,char *argv[]){
     EC_POINT * comPairPubKeyPoint = EC_POINT_new(ecdsaKeyGroup);
 
     /* Converting public keys from hex to points */
-    ecdsaPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup,ecdsaPubKey, ecdsaPubKeyPoint , NULL);
-    comPairPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup,comPairPubKey, comPairPubKeyPoint ,NULL);
+    ecdsaPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup, Alice_DSA_PK, ecdsaPubKeyPoint , NULL);
+    comPairPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup, Bob_DSA_PK, comPairPubKeyPoint ,NULL);
     ecdhPubKeyPoint = EC_POINT_hex2point(dhKeyGroup, Alice_DH_PK, ecdhPubKeyPoint , NULL);
 
     /* Setting the public and private keys */
