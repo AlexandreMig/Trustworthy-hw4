@@ -355,10 +355,10 @@ int main(int argc,char *argv[]){
 
     // 6. If the signature is verified, then Alice continues. Otherwise, it aborts. 
     if (ECDSA_verify(0, digest , SHA256_DIGEST_LENGTH , signature_Alice, combined_message_len - fileLen_Bob_DH_PK, eckey_DSA) == 1){
-        Write_File("Verification_Result_Alice.txt","Successful Verification on Alice Side");
+        Write_File("Verification_Result_Alice.txt","Successful Verification on Bob Side");
     }
     else {
-        Write_File("Verification_Result_Alice.txt","Verification Failed on Alice Side");
+        Write_File("Verification_Result_Alice.txt","Verification Failed on Bob Side");
         return 0;
     }
 
