@@ -294,10 +294,10 @@ int main (int argc, char* argv[])
     //BN_CTX *bn_ctx = BN_CTX_new();
     BIGNUM *A = BN_new();
     BIGNUM *Y = BN_new();
-    EC_POINT *QA = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
-    EC_POINT *QY = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
-    EC_POINT *QB = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
-    EC_POINT *QZ = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
+    EC_POINT *QA = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)));
+    EC_POINT *QY = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)));
+    EC_POINT *QB = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)));
+    EC_POINT *QZ = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)));
 
     EC_KEY *eckey_DSA = EC_KEY_new_by_curve_name(NID_secp192k1);
     EC_KEY *eckey_DH = EC_KEY_new_by_curve_name(NID_secp192k1);
@@ -314,18 +314,18 @@ int main (int argc, char* argv[])
 
     BN_hex2bn(&A, Alice_DH_SK_hex);
     BN_hex2bn(&Y, Alice_DSA_SK_hex);
-    EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)), Alice_DH_PK_hex, QA, bn_ctx);
-    EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)), Alice_DSA_PK_hex, QY, bn_ctx);
+    EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)), Alice_DH_PK_hex, QA, bn_ctx);
+    EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)), Alice_DSA_PK_hex, QY, bn_ctx);
 
     // 2. Alice reads Bob's ECDSA public key from the files
     int fileLen_Bob_DSA_PK;
     char *Bob_DSA_PK_hex = Read_File("test/Bob_DSA_PK.txt", &fileLen_Bob_DSA_PK);
-    EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)), Bob_DSA_PK_hex, QZ, bn_ctx);
+    EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)), Bob_DSA_PK_hex, QZ, bn_ctx);
 
     // 3. Alice computes the signature on her ECDH public key
     unsigned char digest[SHA256_DIGEST_LENGTH];
     SHA256((unsigned char *)Alice_DH_PK_hex, strlen(Alice_DH_PK_hex), digest);
-    EC_KEY *ECDSA_key_Alice = EC_KEY_new_by_curve_name(NID_secp256k1);
+    EC_KEY *ECDSA_key_Alice = EC_KEY_new_by_curve_name(NID_secp192k1);
     EC_KEY_set_private_key(ECDSA_key_Alice, Y);
     EC_KEY_set_public_key(ECDSA_key_Alice, QY);
     unsigned int siglen = ECDSA_size(ECDSA_key_Alice);
@@ -359,7 +359,7 @@ int main (int argc, char* argv[])
     memcpy(signature_Bob, combined_message_received + 130, 72);
 
     // 5. Alice verifies the received signature on the received ECDH public key
-    EC_KEY *ECDSA_key_Bob = EC_KEY_new_by_curve_name(NID_secp256k1);
+    EC_KEY *ECDSA_key_Bob = EC_KEY_new_by_curve_name(NID_secp192k1);
     EC_KEY_set_public_key(ECDSA_key_Bob, QZ);
     unsigned char digest_Bob[SHA256_DIGEST_LENGTH];
     SHA256((unsigned char *)Bob_DH_PK_hex, strlen(Bob_DH_PK_hex), digest_Bob);
@@ -374,7 +374,7 @@ int main (int argc, char* argv[])
     }
 
     // 7. If the verification is successful, she calculates the Alice-Bob-DH key agreement
-    EC_KEY *ECDH_key_Alice = EC_KEY_new_by_curve_name(NID_secp256k1);
+    EC_KEY *ECDH_key_Alice = EC_KEY_new_by_curve_name(NID_secp192k1);
     EC_KEY_set_private_key(ECDH_key_Alice, A);
     EC_KEY_set_public_key(ECDH_key_Alice, QA);
     EC_POINT *KAB = EC_POINT_new(EC_KEY_get0_group(ECDH_key_Alice));

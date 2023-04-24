@@ -290,10 +290,10 @@ int main (int argc, char* argv[])
     BN_CTX *bn_ctx = BN_CTX_new();
     BIGNUM *B = BN_new();
     BIGNUM *Z = BN_new();
-    EC_POINT *QB = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
-    EC_POINT *QZ = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
-    EC_POINT *QA = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
-    EC_POINT *QY = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)));
+    EC_POINT *QB = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)));
+    EC_POINT *QZ = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)));
+    EC_POINT *QA = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)));
+    EC_POINT *QY = EC_POINT_new(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)));
 
     // 1. Bob reads all his keys (ECDSA and ECDH keys) from the files
     int fileLen_Bob_DH_SK, fileLen_Bob_DH_PK, fileLen_Bob_DSA_SK, fileLen_Bob_DSA_PK;
@@ -304,18 +304,18 @@ int main (int argc, char* argv[])
 
     BN_hex2bn(&B, Bob_DH_SK_hex);
     BN_hex2bn(&Z, Bob_DSA_SK_hex);
-    EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)), Bob_DH_PK_hex, QB, bn_ctx);
-    EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)), Bob_DSA_PK_hex, QZ, bn_ctx);
+    EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)), Bob_DH_PK_hex, QB, bn_ctx);
+    EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)), Bob_DSA_PK_hex, QZ, bn_ctx);
 
     // 2. Bob reads Alice's ECDSA public key from the files
     int fileLen_Alice_DSA_PK;
     char *Alice_DSA_PK_hex = Read_File("test/Alice_DSA_PK.txt", &fileLen_Alice_DSA_PK);
-    EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp256k1)), Alice_DSA_PK_hex, QY, bn_ctx);
+    EC_POINT_hex2point(EC_KEY_get0_group(EC_KEY_new_by_curve_name(NID_secp192k1)), Alice_DSA_PK_hex, QY, bn_ctx);
 
     // 3. Bob computes the signature on his ECDH public key and sends it to Alice
     unsigned char digest[SHA256_DIGEST_LENGTH];
     SHA256((unsigned char *)Bob_DH_PK_hex, strlen(Bob_DH_PK_hex), digest);
-    EC_KEY *ECDSA_key_Bob = EC_KEY_new_by_curve_name(NID_secp256k1);
+    EC_KEY *ECDSA_key_Bob = EC_KEY_new_by_curve_name(NID_secp192k1);
     EC_KEY_set_private_key(ECDSA_key_Bob, Z);
     EC_KEY_set_public_key(ECDSA_key_Bob, QZ);
     unsigned int siglen = ECDSA_size(ECDSA_key_Bob);
@@ -349,7 +349,7 @@ int main (int argc, char* argv[])
     Send_via_ZMQ((unsigned char *)combined_message, strlen(Bob_DH_PK_hex) + siglen);
 
     // 5. Bob verifies the received signature on the received ECDH public key
-    EC_KEY *ECDSA_key_Alice = EC_KEY_new_by_curve_name(NID_secp256k1);
+    EC_KEY *ECDSA_key_Alice = EC_KEY_new_by_curve_name(NID_secp192k1);
     EC_KEY_set_public_key(ECDSA_key_Alice, QY);
     unsigned char digest_Alice[SHA256_DIGEST_LENGTH];
     SHA256((unsigned char *)Alice_DH_PK_hex, strlen(Alice_DH_PK_hex), digest_Alice);
@@ -364,7 +364,7 @@ int main (int argc, char* argv[])
     }
 
     // 7. If the verification is successful, he calculates the Bob-Alice-DH key agreement
-    EC_KEY *ECDH_key_Bob = EC_KEY_new_by_curve_name(NID_secp256k1);
+    EC_KEY *ECDH_key_Bob = EC_KEY_new_by_curve_name(NID_secp192k1);
     EC_KEY_set_private_key(ECDH_key_Bob, B);
     EC_KEY_set_public_key(ECDH_key_Bob, QB);
     EC_POINT *KBA = EC_POINT_new(EC_KEY_get0_group(ECDH_key_Bob));
