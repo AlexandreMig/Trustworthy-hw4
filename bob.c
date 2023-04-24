@@ -257,7 +257,7 @@ void Send_via_ZMQ(unsigned char send[], int sendlen)
 	void *context = zmq_ctx_new ();					            //creates a socket to talk to Bob
     void *requester = zmq_socket (context, ZMQ_REQ);		    //creates requester that sends the messages
    	printf("Connecting to Bob and sending the message...\n");
-    zmq_connect (requester, "tcp://localhost:5555");		    //make outgoing connection from socket
+    zmq_connect (requester, "tcp://localhost:6666");		    //make outgoing connection from socket
     zmq_send (requester, send, sendlen, 0);			    	    //send msg to Bob
     zmq_close (requester);						                //closes the requester socket
     zmq_ctx_destroy (context);					                //destroys the context & terminates all 0MQ processes
@@ -358,8 +358,6 @@ int main (int argc, char* argv[])
     int verify_status = ECDSA_verify(0, digest_Alice, SHA256_DIGEST_LENGTH, signature_Alice, siglen, ECDSA_key_Alice);
     if (verify_status == 1) {
         Write_File("Verification_Result_Bob.txt", "Successful Verification on Bob Side");
-        char ack_message[] = "ACK";
-        Send_via_ZMQ((unsigned char *)ack_message, strlen(ack_message));
     } else {
         Write_File("Verification_Result_Bob.txt", "Verification Failed on Bob Side");
         return 0;

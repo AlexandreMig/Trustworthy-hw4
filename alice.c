@@ -270,7 +270,7 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 {
 	void *context = zmq_ctx_new ();			        	                                 //creates a socket to talk to Alice
     void *responder = zmq_socket (context, ZMQ_REP);                                   	//creates responder that receives the messages
-   	int rc = zmq_bind (responder, "tcp://*:5555");	                                	//make outgoing connection from socket
+   	int rc = zmq_bind (responder, "tcp://*:6666");	                                	//make outgoing connection from socket
     int received_length = zmq_recv (responder, receive, limit, 0);	                  	//receive message from Alice
     unsigned char *temp = (unsigned char*) malloc(received_length);
     for(int i=0; i<received_length; i++){
@@ -281,7 +281,6 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
     printf("Size is %d\n", received_length);
     return temp;
 }
-
 
 /*************************************************************
 						M A I N
@@ -370,7 +369,7 @@ int main (int argc, char* argv[])
     if (verify_status == 1) {
         Write_File("Verification_Result_Alice.txt", "Successful Verification on Alice Side");
     } else {
-        Write_File("Verification_Result_Alice.txt", "Verification");
+        Write_File("Verification_Result_Alice.txt", "Verification Failed");
         return 0;
     }
 
