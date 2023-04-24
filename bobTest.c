@@ -335,14 +335,6 @@ int main(int argc,char *argv[]){
     Convert_to_Hex(signHex, signature_Bob, siglen);
     Write_File("Signature_Alice.txt", signHex);
 
-    // Combine Bob_DH_PK_hex and Bob_Alice into a single message
-    unsigned char *combined_message = malloc(fileLen_Bob_DH_PK+siglen);
-    memcpy(combined_message, Bob_DH_PK, fileLen_Bob_DH_PK);
-    memcpy(combined_message+fileLen_Bob_DH_PK, signature_Bob, siglen);
-    
-    // Send the combined message
-    Send_via_ZMQ(combined_message, fileLen_Bob_DH_PK+siglen);
-
     // 4. Bob receives Alice's ECDH public key and her signature on that from Alice
     unsigned char combined_message_received[1000];
     unsigned int combined_message_len;
@@ -353,6 +345,14 @@ int main(int argc,char *argv[]){
     // Split the combined message into Alice_DH_PK_hex and signature_Alice
     memcpy(Alice_DH_PK_hex, combined_message_received,fileLen_Bob_DH_PK);
     memcpy(signature_Bob , combined_message_received + fileLen_Bob_DH_PK, combined_message_len - fileLen_Bob_DH_PK);
+    
+    // Combine Bob_DH_PK_hex and Bob_Alice into a single message
+    unsigned char *combined_message = malloc(fileLen_Bob_DH_PK+siglen);
+    memcpy(combined_message, Bob_DH_PK, fileLen_Bob_DH_PK);
+    memcpy(combined_message+fileLen_Bob_DH_PK, signature_Bob, siglen);
+    
+    // Send the combined message
+    Send_via_ZMQ(combined_message, fileLen_Bob_DH_PK+siglen);
 
     // 5. Bob verifies the received signature on the received ECDH public key
     *digest = SHA256(Alice_DH_PK_hex, fileLen_Bob_DH_PK, digest);
@@ -371,7 +371,7 @@ int main(int argc,char *argv[]){
     // 7. If the verification is successful, he calculates the Bob-Alice-DH key agreement
     QZ = EC_POINT_hex2point(DSA_G, Alice_DH_PK_hex, QZ ,NULL);
     EC_POINT * KAB = EC_POINT_new(DH_G) ; 
-    EC_POINT_mul(DH_G, KAB , NULL, QZ, A, NULL);
+    EC_POINT_mul(DH_G, KAB , NULL, QZ, B, NULL);
     unsigned char* KAB_hex = EC_POINT_point2hex(DH_G, KAB, POINT_CONVERSION_UNCOMPRESSED, NULL); 
     Write_File("DH_Key_Agreement_Alice.txt", KAB_hex);
     
