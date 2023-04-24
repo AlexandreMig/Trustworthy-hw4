@@ -305,11 +305,11 @@ int main(int argc,char *argv[]){
 	unsigned char * comPairPubKey;
 
 	/* Reading the keys from the files */
-	ecdhPrivKey = Read_File(argv[3],&ecdhPrivKeySize);
-	ecdhPubKey = Read_File(argv[4],&ecdhPubKeySize);
-    ecdsaPrivKey = Read_File(argv[1],&ecdsaPrivKeySize);
-    ecdsaPubKey = Read_File(argv[2],&ecdsaPubKeySize);
-    comPairPubKey = Read_File(argv[5],&comPairPubKeySize);
+	ecdhPrivKey = Read_File(argv[3],&ecdhPrivKeySize); // Alice_DH_SK.txt
+	ecdhPubKey = Read_File(argv[4],&ecdhPubKeySize); // Alice_DH_PK.
+    ecdsaPrivKey = Read_File(argv[1],&ecdsaPrivKeySize); // Alice_DSA_SK.txt
+    ecdsaPubKey = Read_File(argv[2],&ecdsaPubKeySize); // Alice_DSA_PK.txt 
+    comPairPubKey = Read_File(argv[5],&comPairPubKeySize); // Bob_DSA_PK.txt
 
     /* Creating the keys for DH and ECDSA */
     EC_KEY * ecdsaKey = EC_KEY_new_by_curve_name(NID_secp192k1);
@@ -320,10 +320,10 @@ int main(int argc,char *argv[]){
     EC_GROUP * dhKeyGroup = EC_KEY_get0_group(dhKey);
 
     /* Converting private keys from hex to bignums */
-    BIGNUM * ecdhPrivBigNum = BN_new();
-    BIGNUM * ecdsaPrivBigNum = BN_new();
-    BN_hex2bn(&ecdhPrivBigNum,ecdhPrivKey);
-    BN_hex2bn(&ecdsaPrivBigNum,ecdsaPrivKey);
+    BIGNUM * A = BN_new();
+    BIGNUM * Y = BN_new();
+    BN_hex2bn(&A,ecdhPrivKey);
+    BN_hex2bn(&Y,ecdsaPrivKey);
 
     /* Generating points for the public keys */
     EC_POINT * ecdsaPubKeyPoint = EC_POINT_new(ecdsaKeyGroup);
@@ -338,8 +338,8 @@ int main(int argc,char *argv[]){
     /* Setting the public and private keys */
     EC_KEY_set_public_key(ecdsaKey,ecdsaPubKeyPoint);
     EC_KEY_set_public_key(dhKey,ecdhPubKeyPoint);
-    EC_KEY_set_private_key(ecdsaKey,ecdsaPrivBigNum);
-    EC_KEY_set_private_key(dhKey,ecdhPrivBigNum);
+    EC_KEY_set_private_key(ecdsaKey, Y);
+    EC_KEY_set_private_key(dhKey,A);
 
 
     /*
@@ -414,7 +414,7 @@ int main(int argc,char *argv[]){
         BN_CTX * comPairRecvPubKeyCtx = BN_CTX_new();
         comPairPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup,recevidPublicKey, comPairPubKeyPoint ,NULL);
         EC_POINT * multPoint = EC_POINT_new(dhKeyGroup) ; 
-        EC_POINT_mul(dhKeyGroup, multPoint , NULL, comPairPubKeyPoint, ecdhPrivBigNum , NULL);
+        EC_POINT_mul(dhKeyGroup, multPoint , NULL, comPairPubKeyPoint, A, NULL);
 
         /* Converting the received public key to a point */
         unsigned char * dhKeyAgreement = EC_POINT_point2hex(dhKeyGroup, multPoint, POINT_CONVERSION_UNCOMPRESSED, NULL); 
