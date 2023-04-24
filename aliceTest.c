@@ -305,10 +305,10 @@ int main(int argc,char *argv[]){
 
     unsigned char *Alice_DSA_SK = Read_File(argv[1], &fileLen_Alice_DSA_SK);
     unsigned char *Alice_DSA_PK = Read_File(argv[2], &fileLen_Alice_DSA_PK);
-    unsigned char *Alice_DH_SK_hex = Read_File(argv[3], &fileLen_Alice_DH_SK);
+    unsigned char *Alice_DH_SK = Read_File(argv[3], &fileLen_Alice_DH_SK);
     unsigned char *Alice_DH_PK = Read_File(argv[4], &fileLen_Alice_DH_PK);
 
-    BN_hex2bn(&A, Alice_DH_SK_hex);
+    BN_hex2bn(&A, Alice_DH_SK);
     BN_hex2bn(&Y, Alice_DSA_SK);
 
     // 2. Alice reads Bob's ECDSA public key from the files
