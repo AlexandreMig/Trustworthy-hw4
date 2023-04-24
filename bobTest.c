@@ -289,80 +289,80 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 int main(int argc,char *argv[]){
 
     //BN_CTX *bn_ctx = BN_CTX_new();
-    BIGNUM *A = BN_new();
-    BIGNUM *Y = BN_new();
+    BIGNUM *B = BN_new();
+    BIGNUM *Z = BN_new();
     EC_KEY *eckey_DSA = EC_KEY_new_by_curve_name(NID_secp192k1);
     EC_KEY *eckey_DH = EC_KEY_new_by_curve_name(NID_secp192k1);
     EC_GROUP *DSA_G = EC_KEY_get0_group(eckey_DSA);
     EC_GROUP *DH_G = EC_KEY_get0_group(eckey_DH);
 
     EC_POINT *QY = EC_POINT_new(DSA_G);
-    EC_POINT *QA = EC_POINT_new(DH_G);
+    EC_POINT *QB = EC_POINT_new(DH_G);
     EC_POINT *QZ = EC_POINT_new(DSA_G);
 
     // 1. Alice reads all her keys (ECDSA and ECDH keys) from the files
-    int fileLen_Alice_DH_SK, fileLen_Alice_DH_PK, fileLen_Alice_DSA_SK, fileLen_Alice_DSA_PK;
+    int fileLen_Bob_DH_SK, fileLen_Bob_DH_PK, fileLen_Bob_DSA_SK, fileLen_Bob_DSA_PK;
 
-    unsigned char *Alice_DSA_SK = Read_File(argv[1], &fileLen_Alice_DSA_SK);
-    unsigned char *Alice_DSA_PK = Read_File(argv[2], &fileLen_Alice_DSA_PK);
-    unsigned char *Alice_DH_SK = Read_File(argv[3], &fileLen_Alice_DH_SK);
-    unsigned char *Alice_DH_PK = Read_File(argv[4], &fileLen_Alice_DH_PK);
+    unsigned char *Bob_DSA_SK = Read_File(argv[1], &fileLen_Bob_DSA_SK);
+    unsigned char *Bob_DSA_PK = Read_File(argv[2], &fileLen_Bob_DSA_PK);
+    unsigned char *Bob_DH_SK = Read_File(argv[3], &fileLen_Bob_DH_SK);
+    unsigned char *Bob_DH_PK = Read_File(argv[4], &fileLen_Bob_DH_PK);
 
-    BN_hex2bn(&A, Alice_DH_SK);
-    BN_hex2bn(&Y, Alice_DSA_SK);
+    BN_hex2bn(&B, Bob_DH_SK);
+    BN_hex2bn(&Z, Bob_DSA_SK);
 
     // 2. Alice reads Bob's ECDSA public key from the files
-    int fileLen_Bob_DSA_PK;
-    unsigned char *Bob_DSA_PK;
+    int fileLen_Alice_DSA_PK;
+    unsigned char *Alice_DSA_PK;
 
-    Bob_DSA_PK = Read_File(argv[5], &fileLen_Bob_DSA_PK);
+    Alice_DSA_PK = Read_File(argv[5], &fileLen_Alice_DSA_PK);
 
     // 3. Alice computes the signature on her ECDH public key
     unsigned char digest[SHA256_DIGEST_LENGTH];
-    SHA256(Alice_DH_PK, strlen(Alice_DH_PK), digest);
-    QY = EC_POINT_hex2point(DSA_G, Alice_DSA_PK, QY , NULL);
-    QZ = EC_POINT_hex2point(DSA_G, Bob_DSA_PK, QZ ,NULL);
-    QA = EC_POINT_hex2point(DH_G, Alice_DH_PK, QA, NULL);
+    SHA256(Bob_DH_PK, strlen(Bob_DH_PK), digest);
+    QY = EC_POINT_hex2point(DSA_G, Bob_DSA_PK, QY , NULL);
+    QZ = EC_POINT_hex2point(DSA_G, Alice_DSA_PK, QZ ,NULL);
+    QB = EC_POINT_hex2point(DH_G, Bob_DH_PK, QB, NULL);
 
     EC_KEY_set_public_key(eckey_DSA, QY);
-    EC_KEY_set_public_key(eckey_DH, QA);
-    EC_KEY_set_private_key(eckey_DSA, Y);
-    EC_KEY_set_private_key(eckey_DH, A);
+    EC_KEY_set_public_key(eckey_DH, QB);
+    EC_KEY_set_private_key(eckey_DSA, Z);
+    EC_KEY_set_private_key(eckey_DH, B);
     unsigned int siglen = ECDSA_size(eckey_DSA);
-    unsigned char *signature_Alice = OPENSSL_malloc(siglen);
+    unsigned char *signature_Bob = OPENSSL_malloc(siglen);
 
-    ECDSA_sign(0, digest , SHA256_DIGEST_LENGTH , signature_Alice, &siglen , eckey_DSA);
+    ECDSA_sign(0, digest , SHA256_DIGEST_LENGTH , signature_Bob, &siglen , eckey_DSA);
     unsigned char *signHex = malloc(siglen*2+1);
     signHex[siglen*2]=0;
-    Convert_to_Hex(signHex, signature_Alice, siglen);
+    Convert_to_Hex(signHex, signature_Bob, siglen);
     Write_File("Signature_Alice.txt", signHex);
 
     // Combine Alice_DH_PK_hex and signature_Alice into a single message
-    unsigned char *combined_message = malloc(fileLen_Alice_DH_PK+siglen);
-    memcpy(combined_message,Alice_DH_PK, fileLen_Alice_DH_PK);
-    memcpy(combined_message+fileLen_Alice_DH_PK, signature_Alice, siglen);
+    unsigned char *combined_message = malloc(fileLen_Bob_DH_PK+siglen);
+    memcpy(combined_message, Bob_DH_PK, fileLen_Bob_DH_PK);
+    memcpy(combined_message+fileLen_Bob_DH_PK, signature_Bob, siglen);
     
     // Send the combined message
-    Send_via_ZMQ(combined_message,fileLen_Alice_DH_PK+siglen);
+    Send_via_ZMQ(combined_message, fileLen_Bob_DH_PK+siglen);
 
     // 4. Alice receives Bob's ECDH public key and his signature on that from Bob
     unsigned char combined_message_received[1000];
     unsigned int combined_message_len;
-    unsigned char *Bob_DH_PK_hex = malloc(fileLen_Alice_DH_PK);
-    unsigned char *signature_Bob = malloc(combined_message_len - fileLen_Alice_DH_PK);
+    unsigned char *Alice_DH_PK_hex = malloc(fileLen_Bob_DH_PK);
+    unsigned char *signature_Alice = malloc(combined_message_len - fileLen_Bob_DH_PK);
     Receive_via_ZMQ(combined_message_received, &combined_message_len, 1000);
 
     // Split the combined message into Bob_DH_PK_hex and signature_Bob
-    memcpy(Bob_DH_PK_hex, combined_message_received,fileLen_Alice_DH_PK);
-    memcpy(signature_Bob , combined_message_received + fileLen_Alice_DH_PK, combined_message_len - fileLen_Alice_DH_PK);
+    memcpy(Alice_DH_PK_hex, combined_message_received,fileLen_Bob_DH_PK);
+    memcpy(signature_Bob , combined_message_received + fileLen_Bob_DH_PK, combined_message_len - fileLen_Bob_DH_PK);
 
     // 5. Alice verifies the received signature on the received ECDH public key
-    *digest = SHA256(Bob_DH_PK_hex, fileLen_Alice_DH_PK, digest);
+    *digest = SHA256(Alice_DH_PK_hex, fileLen_Bob_DH_PK, digest);
     EC_KEY_set_public_key(eckey_DSA, QZ);
 
 
     // 6. If the signature is verified, then Bob continues. Otherwise, it aborts. 
-    if (ECDSA_verify(0, digest , SHA256_DIGEST_LENGTH , signature_Bob, combined_message_len - fileLen_Alice_DH_PK, eckey_DSA) == 1){
+    if (ECDSA_verify(0, digest , SHA256_DIGEST_LENGTH , signature_Alice, combined_message_len - fileLen_Bob_DH_PK, eckey_DSA) == 1){
         Write_File("Verification_Result_Alice.txt","Successful Verification on Alice Side");
     }
     else {
@@ -371,7 +371,7 @@ int main(int argc,char *argv[]){
     }
 
     // 7. If the verification is successful, she calculates the Alice-Bob-DH key agreement
-    QZ = EC_POINT_hex2point(DSA_G,Bob_DH_PK_hex, QZ ,NULL);
+    QZ = EC_POINT_hex2point(DSA_G, Alice_DH_PK_hex, QZ ,NULL);
     EC_POINT * KAB = EC_POINT_new(DH_G) ; 
     EC_POINT_mul(DH_G, KAB , NULL, QZ, A, NULL);
     unsigned char* KAB_hex = EC_POINT_point2hex(DH_G, KAB, POINT_CONVERSION_UNCOMPRESSED, NULL); 
