@@ -346,10 +346,10 @@ int main(int argc,char *argv[]){
     Send_via_ZMQ(combined_message,fileLen_Alice_DH_PK+siglen);
 
     // 4. Alice receives Bob's ECDH public key and his signature on that from Bob
-    unsigned char *Bob_DH_PK_hex = malloc(fileLen_Alice_DH_PK);
-    unsigned char *signature_Bob = malloc(combined_message_len - fileLen_Alice_DH_PK);
     unsigned char combined_message_received[1000];
     unsigned int combined_message_len;
+    unsigned char *Bob_DH_PK_hex = malloc(fileLen_Alice_DH_PK);
+    unsigned char *signature_Bob = malloc(combined_message_len - fileLen_Alice_DH_PK);
     Receive_via_ZMQ(combined_message_received, &combined_message_len , 1000);
 
     // Split the combined message into Bob_DH_PK_hex and signature_Bob
