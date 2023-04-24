@@ -318,8 +318,8 @@ int main(int argc,char *argv[]){
     Bob_DSA_PK = Read_File(argv[5], &fileLen_Bob_DSA_PK);
 
     // 3. Alice computes the signature on her ECDH public key
-    unsigned char digestBuff[SHA256_DIGEST_LENGTH];
-    unsigned char * digest = SHA256(Alice_DH_PK, strlen(Alice_DH_PK), digestBuff);
+    unsigned char digest[SHA256_DIGEST_LENGTH];
+    SHA256(Alice_DH_PK, strlen(Alice_DH_PK), digest);
     QY = EC_POINT_hex2point(DSA_G, Alice_DSA_PK, QY , NULL);
     QZ = EC_POINT_hex2point(DSA_G, Bob_DSA_PK, QZ ,NULL);
     QA = EC_POINT_hex2point(DH_G, Alice_DH_PK, QA, NULL);
@@ -357,7 +357,7 @@ int main(int argc,char *argv[]){
     memcpy(signature_Bob , combined_message_received + fileLen_Alice_DH_PK, combined_message_len - fileLen_Alice_DH_PK);
 
     // 5. Alice verifies the received signature on the received ECDH public key
-    digest = SHA256(Bob_DH_PK_hex,fileLen_Alice_DH_PK, digestBuff);
+    *digest = SHA256(Bob_DH_PK_hex,fileLen_Alice_DH_PK, digest);
     EC_KEY_set_public_key(eckey_DSA, QZ);
 
 
@@ -371,7 +371,6 @@ int main(int argc,char *argv[]){
     }
 
     // 7. If the verification is successful, she calculates the Alice-Bob-DH key agreement
-    BN_CTX * comPairRecvPubKeyCtx = BN_CTX_new();
     QZ = EC_POINT_hex2point(DSA_G,Bob_DH_PK_hex, QZ ,NULL);
     EC_POINT * KAB = EC_POINT_new(DH_G) ; 
     EC_POINT_mul(DH_G, KAB , NULL, QZ, A, NULL);
