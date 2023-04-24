@@ -292,24 +292,24 @@ int main(int argc,char *argv[]){
 
 	/* Parameters */
 	unsigned char * Alice_DH_SK_hex;
-	unsigned int ecdhPrivKeySize;
+	unsigned int fileLen_Alice_DH_SK;
 	unsigned char * Alice_DH_PK;
-	unsigned int ecdhPubKeySize;
+	unsigned int fileLen_Alice_DH_PK;
 	unsigned char * Alice_DSA_SK;
-	unsigned int ecdsaPrivKeySize;
+	unsigned int fileLen_Alice_DSA_SK;
 	unsigned char * Alice_DSA_PK;
-	unsigned int ecdsaPubKeySize;
-	unsigned int comPairPubKeySize;
+	unsigned int fileLen_Alice_DSA_PK;
+	unsigned int fileLen_Bob_DSA_PK;
 
 	/* comPairPubKey is the Bob's ECDSA public key which is read from the file */
 	unsigned char * Bob_DSA_PK;
 
 	/* Reading the keys from the files */
-	Alice_DH_SK_hex = Read_File(argv[3],&ecdhPrivKeySize); // Alice_DH_SK.txt
-	Alice_DH_PK = Read_File(argv[4],&ecdhPubKeySize); // Alice_DH_PK.
-    Alice_DSA_SK = Read_File(argv[1],&ecdsaPrivKeySize); // Alice_DSA_SK.txt
-    Alice_DSA_PK = Read_File(argv[2],&ecdsaPubKeySize); // Alice_DSA_PK.txt 
-    Bob_DSA_PK = Read_File(argv[5],&comPairPubKeySize); // Bob_DSA_PK.txt
+	Alice_DH_SK_hex = Read_File(argv[3], &fileLen_Alice_DH_SK); // Alice_DH_SK.txt
+	Alice_DH_PK = Read_File(argv[4], &fileLen_Alice_DH_PK); // Alice_DH_PK.
+    Alice_DSA_SK = Read_File(argv[1], &fileLen_Alice_DSA_SK); // Alice_DSA_SK.txt
+    Alice_DSA_PK = Read_File(argv[2], &fileLen_Alice_DSA_PK); // Alice_DSA_PK.txt 
+    Bob_DSA_PK = Read_File(argv[5], &fileLen_Bob_DSA_PK); // Bob_DSA_PK.txt
 
     /* Creating the keys for DH and ECDSA */
     EC_KEY * ecdsaKey = EC_KEY_new_by_curve_name(NID_secp192k1);
@@ -375,10 +375,10 @@ int main(int argc,char *argv[]){
     */
 
     /* Sending the ECDH public key and the signature*/
-    unsigned char * buffer2send = malloc(ecdhPubKeySize+signatureLen);
-    memcpy(buffer2send,Alice_DH_PK,ecdhPubKeySize);
-    memcpy(buffer2send+ecdhPubKeySize , signature , signatureLen);
-    Send_via_ZMQ(buffer2send,ecdhPubKeySize+signatureLen);
+    unsigned char * buffer2send = malloc(fileLen_Alice_DH_PK+signatureLen);
+    memcpy(buffer2send,Alice_DH_PK,fileLen_Alice_DH_PK);
+    memcpy(buffer2send+fileLen_Alice_DH_PK , signature , signatureLen);
+    Send_via_ZMQ(buffer2send,fileLen_Alice_DH_PK+signatureLen);
 
 
     /* Receiving */
@@ -389,16 +389,16 @@ int main(int argc,char *argv[]){
 	
     // Since the signatue length is variable and there is no structure for sending,
     // we use the fact that the public key is constant. 
-    unsigned int recvSignatureLen = recvLen - ecdhPubKeySize;
+    unsigned int recvSignatureLen = recvLen - fileLen_Alice_DH_PK;
 
-    unsigned char * recevidPublicKey = malloc(ecdhPubKeySize);
+    unsigned char * recevidPublicKey = malloc(fileLen_Alice_DH_PK);
     unsigned char * receivedSignature = malloc(recvSignatureLen);
-    memcpy(recevidPublicKey, recPacket,ecdhPubKeySize);
-    memcpy(receivedSignature , recPacket + ecdhPubKeySize, recvSignatureLen);
+    memcpy(recevidPublicKey, recPacket,fileLen_Alice_DH_PK);
+    memcpy(receivedSignature , recPacket + fileLen_Alice_DH_PK, recvSignatureLen);
 
 
     /* Verifying */
-    digest = SHA256(recevidPublicKey,ecdhPubKeySize, digestBuff);
+    digest = SHA256(recevidPublicKey,fileLen_Alice_DH_PK, digestBuff);
 
     /* Verification is done via the Bob's public key */
     EC_KEY_set_public_key(ecdsaKey,comPairPubKeyPoint);
