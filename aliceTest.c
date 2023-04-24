@@ -12,12 +12,6 @@
 #include <sys/types.h>
 
 
-typedef unsigned char u8;
-typedef unsigned int u32;
-
-
-
-
 /* Function prototypes */
 char* Read_File (char fileName[], int *fileLen);
 void Convert_to_Hex(char output[], unsigned char input[], int inputlength);
@@ -27,7 +21,7 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 
 
 
-int main(int argc,char **argv){
+int main(int argc,char *argv[]){
 
 	/* Parameters */
 	unsigned char * ecdhPrivKey;
@@ -38,7 +32,6 @@ int main(int argc,char **argv){
 	unsigned int ecdsaPrivKeySize;
 	unsigned char * ecdsaPubKey;
 	unsigned int ecdsaPubKeySize;
-	unsigned char * comPairPubKey;
 	unsigned int comPairPubKeySize;
 
 	/* comPairPubKey is the Bob's ECDSA public key which is read from the file */
@@ -160,9 +153,11 @@ int main(int argc,char **argv){
         unsigned char * dhKeyAgreement = EC_POINT_point2hex(dhKeyGroup, multPoint, POINT_CONVERSION_UNCOMPRESSED, NULL); 
         Write_File("DH_Key_Agreement_Alice.txt",dhKeyAgreement);
     }
-    else
+    else {
         Write_File("Verification_Result_Alice.txt","Verification Failed on Alice Side");
-        
+    }
+
+    return 0;
 }
 
 

@@ -12,11 +12,6 @@
 #include <sys/types.h>
 
 
-typedef unsigned char u8;
-typedef unsigned int u32;
-
-
-
 /* Function prototypes */
 char* Read_File (char fileName[], int *fileLen);
 void Convert_to_Hex(char output[], unsigned char input[], int inputlength);
@@ -27,7 +22,7 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 
 
 
-int main(int argc,char **argv){
+int main(int argc,char *argv[]){
 
 
 	/* Parameters */
@@ -141,9 +136,12 @@ int main(int argc,char **argv){
         unsigned char * dhKeyAgreement = EC_POINT_point2hex(dhKeyGroup, multPoint, POINT_CONVERSION_UNCOMPRESSED, NULL);
         Write_File("DH_Key_Agreement_Bob.txt",(char *)dhKeyAgreement);
 
-    }else
+    }else {
         Write_File("Verification_Result_Bob.txt","Verification Failed on Bob Side");
-}
+    }
+    
+    return 0;
+}   
 
 
 
