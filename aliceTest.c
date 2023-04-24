@@ -300,7 +300,6 @@ int main(int argc,char *argv[]){
     EC_POINT *QA = EC_POINT_new(DH_G);
     EC_POINT *QZ = EC_POINT_new(DSA_G);
 
-
     // 1. Alice reads all her keys (ECDSA and ECDH keys) from the files
     int fileLen_Alice_DH_SK, fileLen_Alice_DH_PK, fileLen_Alice_DSA_SK, fileLen_Alice_DSA_PK;
 
@@ -347,28 +346,23 @@ int main(int argc,char *argv[]){
     Send_via_ZMQ(combined_message,fileLen_Alice_DH_PK+siglen);
 
     // 4. Alice receives Bob's ECDH public key and his signature on that from Bob
+    unsigned char *Bob_DH_PK_hex = malloc(fileLen_Alice_DH_PK);
+    unsigned char *signature_Bob = malloc(combined_message_len - fileLen_Alice_DH_PK);
     unsigned char combined_message_received[1000];
     unsigned int combined_message_len;
     Receive_via_ZMQ(combined_message_received, &combined_message_len , 1000);
 
-    
     // Split the combined message into Bob_DH_PK_hex and signature_Bob
-    unsigned int recvSignatureLen = combined_message_len - fileLen_Alice_DH_PK;
+    memcpy(Bob_DH_PK_hex, combined_message_received,fileLen_Alice_DH_PK);
+    memcpy(signature_Bob , combined_message_received + fileLen_Alice_DH_PK, combined_message_len - fileLen_Alice_DH_PK);
 
-    unsigned char * recevidPublicKey = malloc(fileLen_Alice_DH_PK);
-    unsigned char * receivedSignature = malloc(recvSignatureLen);
-    memcpy(recevidPublicKey, combined_message_received,fileLen_Alice_DH_PK);
-    memcpy(receivedSignature , combined_message_received + fileLen_Alice_DH_PK, recvSignatureLen);
-
-
-    /* Verifying */
-    digest = SHA256(recevidPublicKey,fileLen_Alice_DH_PK, digestBuff);
-
-    /* Verification is done via the Bob's public key */
+    // 5. Alice verifies the received signature on the received ECDH public key
+    digest = SHA256(Bob_DH_PK_hex,fileLen_Alice_DH_PK, digestBuff);
     EC_KEY_set_public_key(eckey_DSA, QZ);
 
 
-    if (ECDSA_verify(0, digest , SHA256_DIGEST_LENGTH , receivedSignature, recvSignatureLen , eckey_DSA)==1){
+    // 6. If the signature is verified, then Bob continues. Otherwise, it aborts. 
+    if (ECDSA_verify(0, digest , SHA256_DIGEST_LENGTH , signature_Bob, combined_message_len - fileLen_Alice_DH_PK , eckey_DSA)==1){
 
         Write_File("Verification_Result_Alice.txt","Successful Verification on Alice Side");
 
@@ -376,7 +370,7 @@ int main(int argc,char *argv[]){
 
         /* Converting the received public key to a point */
         BN_CTX * comPairRecvPubKeyCtx = BN_CTX_new();
-        QZ = EC_POINT_hex2point(DSA_G,recevidPublicKey, QZ ,NULL);
+        QZ = EC_POINT_hex2point(DSA_G,Bob_DH_PK_hex, QZ ,NULL);
         EC_POINT * multPoint = EC_POINT_new(DH_G) ; 
         EC_POINT_mul(DH_G, multPoint , NULL, QZ, A, NULL);
 
