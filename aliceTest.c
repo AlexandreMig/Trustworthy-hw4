@@ -291,9 +291,9 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 int main(int argc,char *argv[]){
 
 	/* Parameters */
-	unsigned char * ecdhPrivKey;
+	unsigned char * Alice_DH_SK_hex;
 	unsigned int ecdhPrivKeySize;
-	unsigned char * ecdhPubKey;
+	unsigned char * Alice_DH_PK;
 	unsigned int ecdhPubKeySize;
 	unsigned char * ecdsaPrivKey;
 	unsigned int ecdsaPrivKeySize;
@@ -305,8 +305,8 @@ int main(int argc,char *argv[]){
 	unsigned char * comPairPubKey;
 
 	/* Reading the keys from the files */
-	ecdhPrivKey = Read_File(argv[3],&ecdhPrivKeySize); // Alice_DH_SK.txt
-	ecdhPubKey = Read_File(argv[4],&ecdhPubKeySize); // Alice_DH_PK.
+	Alice_DH_SK_hex = Read_File(argv[3],&ecdhPrivKeySize); // Alice_DH_SK.txt
+	Alice_DH_PK = Read_File(argv[4],&ecdhPubKeySize); // Alice_DH_PK.
     ecdsaPrivKey = Read_File(argv[1],&ecdsaPrivKeySize); // Alice_DSA_SK.txt
     ecdsaPubKey = Read_File(argv[2],&ecdsaPubKeySize); // Alice_DSA_PK.txt 
     comPairPubKey = Read_File(argv[5],&comPairPubKeySize); // Bob_DSA_PK.txt
@@ -322,7 +322,7 @@ int main(int argc,char *argv[]){
     /* Converting private keys from hex to bignums */
     BIGNUM * A = BN_new();
     BIGNUM * Y = BN_new();
-    BN_hex2bn(&A,ecdhPrivKey);
+    BN_hex2bn(&A, Alice_DH_SK_hex);
     BN_hex2bn(&Y,ecdsaPrivKey);
 
     /* Generating points for the public keys */
@@ -333,7 +333,7 @@ int main(int argc,char *argv[]){
     /* Converting public keys from hex to points */
     ecdsaPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup,ecdsaPubKey, ecdsaPubKeyPoint , NULL);
     comPairPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup,comPairPubKey, comPairPubKeyPoint ,NULL);
-    ecdhPubKeyPoint = EC_POINT_hex2point(dhKeyGroup,ecdhPubKey, ecdhPubKeyPoint , NULL);
+    ecdhPubKeyPoint = EC_POINT_hex2point(dhKeyGroup, Alice_DH_PK, ecdhPubKeyPoint , NULL);
 
     /* Setting the public and private keys */
     EC_KEY_set_public_key(ecdsaKey,ecdsaPubKeyPoint);
@@ -354,7 +354,7 @@ int main(int argc,char *argv[]){
     unsigned int signatureLen = ECDSA_size(ecdsaKey);
     unsigned char * signature = OPENSSL_malloc(signatureLen);
     unsigned char digestBuff[SHA256_DIGEST_LENGTH];
-    unsigned char * digest = SHA256(ecdhPubKey,strlen(ecdhPubKey), digestBuff);
+    unsigned char * digest = SHA256(Alice_DH_PK, strlen(Alice_DH_PK), digestBuff);
 
     /* Signing the ECDH public key using the ECDSA */
     ECDSA_sign(0, digest , SHA256_DIGEST_LENGTH , signature, &signatureLen , ecdsaKey );
@@ -376,7 +376,7 @@ int main(int argc,char *argv[]){
 
     /* Sending the ECDH public key and the signature*/
     unsigned char * buffer2send = malloc(ecdhPubKeySize+signatureLen);
-    memcpy(buffer2send,ecdhPubKey,ecdhPubKeySize);
+    memcpy(buffer2send,Alice_DH_PK,ecdhPubKeySize);
     memcpy(buffer2send+ecdhPubKeySize , signature , signatureLen);
     Send_via_ZMQ(buffer2send,ecdhPubKeySize+signatureLen);
 
