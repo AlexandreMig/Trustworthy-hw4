@@ -337,19 +337,27 @@ int main (int argc, char* argv[])
     Convert_to_Hex(signature_Alice_hex, signature_Alice, siglen);
     Write_File("Signature_Alice.txt", signature_Alice_hex);
 
-    // Alice sends her ECDH public key and the signature to Bob over ZeroMQ
-    Send_via_ZMQ((unsigned char *)Alice_DH_PK_hex, strlen(Alice_DH_PK_hex));
-    Send_via_ZMQ(signature_Alice, siglen);
+    // Combine Alice_DH_PK_hex and signature_Alice into a single message
+    char combined_message[strlen(Alice_DH_PK_hex) + siglen + 1];
+    memcpy(combined_message, Alice_DH_PK_hex, strlen(Alice_DH_PK_hex));
+    memcpy(combined_message + strlen(Alice_DH_PK_hex), signature_Alice, siglen);
+    combined_message[strlen(Alice_DH_PK_hex) + siglen] = '\0';
 
-    // 4. Alice receives Bob's ECDH public key and his signature on that from Bob
+    // Send the combined message
+    Send_via_ZMQ((unsigned char *)combined_message, strlen(Alice_DH_PK_hex) + siglen);
+
+    // 6. Alice receives Bob's ECDH public key and his signature on that from Bob
     unsigned char Bob_DH_PK_hex[131];
-    int Bob_DH_PK_hex_len;
-    Receive_via_ZMQ(Bob_DH_PK_hex, &Bob_DH_PK_hex_len, 131);
-    Bob_DH_PK_hex[130] = '\0';
-
     unsigned char signature_Bob[72];
-    //int siglen;
-    Receive_via_ZMQ(signature_Bob, &siglen, 72);
+    unsigned char combined_message_received[131 + 72];
+    int combined_message_len;
+    Receive_via_ZMQ(combined_message_received, &combined_message_len, 131 + 72);
+    combined_message_received[combined_message_len] = '\0';
+
+    // Split the combined message into Bob_DH_PK_hex and signature_Bob
+    memcpy(Bob_DH_PK_hex, combined_message_received, 130);
+    Bob_DH_PK_hex[130] = '\0';
+    memcpy(signature_Bob, combined_message_received + 130, 72);
 
     // 5. Alice verifies the received signature on the received ECDH public key
     EC_KEY *ECDSA_key_Bob = EC_KEY_new_by_curve_name(NID_secp256k1);
