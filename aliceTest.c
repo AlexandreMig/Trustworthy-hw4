@@ -292,10 +292,7 @@ int main(int argc,char *argv[]){
 
 
     // 1. Alice reads all her keys (ECDSA and ECDH keys) from the files
-    unsigned int fileLen_Alice_DH_SK;
-    unsigned int fileLen_Alice_DH_PK;
-    unsigned int fileLen_Alice_DSA_SK;
-    unsigned int fileLen_Alice_DSA_PK;
+    int fileLen_Alice_DH_SK, fileLen_Alice_DH_PK, fileLen_Alice_DSA_SK, fileLen_Alice_DSA_PK;
 
     unsigned char * Alice_DH_SK_hex = Read_File(argv[3], &fileLen_Alice_DH_SK);
     unsigned char * Alice_DH_PK = Read_File(argv[4], &fileLen_Alice_DH_PK);
