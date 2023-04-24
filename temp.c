@@ -42,8 +42,8 @@ _______________________________________________________________________________*
 /*================================
     Creating Context for BIGNUM
 ==================================*/
-//BN_CTX *bn_ctx;
-//bn_ctx = BN_CTX_new();
+// BN_CTX *bn_ctx;
+// bn_ctx = BN_CTX_new();
 
 /*============================
     Convert BIGNUM to HEX
@@ -108,8 +108,8 @@ int EC_POINT_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *n, const EC_P
 */
 EC_KEY *EC_KEY_new_by_curve_name(int nid);
  //For DSA and DH, use the following curve:
- //eckey_DSA = EC_KEY_new_by_curve_name(NID_secp192k1);
- //eckey_DH = EC_KEY_new_by_curve_name(NID_secp192k1);
+//  eckey_DSA = EC_KEY_new_by_curve_name(NID_secp192k1);
+//  eckey_DH = EC_KEY_new_by_curve_name(NID_secp192k1);
 
  /*================================
     Getting the group from EC_KEY
@@ -257,7 +257,7 @@ void Send_via_ZMQ(unsigned char send[], int sendlen)
 	void *context = zmq_ctx_new ();					            //creates a socket to talk to Bob
     void *requester = zmq_socket (context, ZMQ_REQ);		    //creates requester that sends the messages
    	printf("Connecting to Bob and sending the message...\n");
-    zmq_connect (requester, "tcp://localhost:5555");		    //make outgoing connection from socket
+    zmq_connect (requester, "tcp://localhost:6666");		    //make outgoing connection from socket
     zmq_send (requester, send, sendlen, 0);			    	    //send msg to Bob
     zmq_close (requester);						                //closes the requester socket
     zmq_ctx_destroy (context);					                //destroys the context & terminates all 0MQ processes
@@ -270,7 +270,7 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 {
 	void *context = zmq_ctx_new ();			        	                                 //creates a socket to talk to Alice
     void *responder = zmq_socket (context, ZMQ_REP);                                   	//creates responder that receives the messages
-   	int rc = zmq_bind (responder, "tcp://*:6666");	                                	//make outgoing connection from socket
+   	int rc = zmq_bind (responder, "tcp://*:5555");	                                	//make outgoing connection from socket
     int received_length = zmq_recv (responder, receive, limit, 0);	                  	//receive message from Alice
     unsigned char *temp = (unsigned char*) malloc(received_length);
     for(int i=0; i<received_length; i++){
@@ -290,23 +290,25 @@ unsigned char *Receive_via_ZMQ(unsigned char receive[], int *receivelen, int lim
 
 int main(int argc,char *argv[]){
 
+
 	/* Parameters */
-	unsigned char * ecdhPrivKey;
-	unsigned int ecdhPrivKeySize;
-	unsigned char * ecdhPubKey;
-	unsigned int ecdhPubKeySize;
-	unsigned char * ecdsaPrivKey;
-	unsigned int ecdsaPrivKeySize;
-	unsigned char * ecdsaPubKey;
-	unsigned int ecdsaPubKeySize;
-	unsigned int comPairPubKeySize;
+    unsigned char *ecdhPrivKey;
+    unsigned int ecdhPrivKeySize;
+    unsigned char *ecdhPubKey;
+    unsigned int ecdhPubKeySize;
 
-	/* comPairPubKey is the Bob's ECDSA public key which is read from the file */
-	unsigned char * comPairPubKey;
+    unsigned char *ecdsaPrivKey;
+    unsigned int ecdsaPrivKeySize;
+    unsigned char *ecdsaPubKey;
+    unsigned int ecdsaPubKeySize;
 
-	/* Reading the keys from the files */
-	ecdhPrivKey = Read_File(argv[3],&ecdhPrivKeySize);
-	ecdhPubKey = Read_File(argv[4],&ecdhPubKeySize);
+    /* comPairPubKey is the Alice's ECDSA public key which is read from the file */
+    unsigned char *comPairPubKey;
+    unsigned int comPairPubKeySize;
+
+    /* Reading the keys from the file */
+    ecdhPrivKey = Read_File(argv[3],&ecdhPrivKeySize);
+    ecdhPubKey = Read_File(argv[4],&ecdhPubKeySize);
     ecdsaPrivKey = Read_File(argv[1],&ecdsaPrivKeySize);
     ecdsaPubKey = Read_File(argv[2],&ecdsaPubKeySize);
     comPairPubKey = Read_File(argv[5],&comPairPubKeySize);
@@ -322,8 +324,8 @@ int main(int argc,char *argv[]){
     /* Converting private keys from hex to bignums */
     BIGNUM * ecdhPrivBigNum = BN_new();
     BIGNUM * ecdsaPrivBigNum = BN_new();
-    BN_hex2bn(&ecdhPrivBigNum,ecdhPrivKey);
-    BN_hex2bn(&ecdsaPrivBigNum,ecdsaPrivKey);
+    BN_hex2bn(&ecdhPrivBigNum,(char *)ecdhPrivKey);
+    BN_hex2bn(&ecdsaPrivBigNum,(char *)ecdsaPrivKey);
 
     /* Generating points for the public keys */
     EC_POINT * ecdsaPubKeyPoint = EC_POINT_new(ecdsaKeyGroup);
@@ -331,9 +333,9 @@ int main(int argc,char *argv[]){
     EC_POINT * comPairPubKeyPoint = EC_POINT_new(ecdsaKeyGroup);
 
     /* Converting public keys from hex to points */
-    ecdsaPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup,ecdsaPubKey, ecdsaPubKeyPoint , NULL);
-    comPairPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup,comPairPubKey, comPairPubKeyPoint ,NULL);
-    ecdhPubKeyPoint = EC_POINT_hex2point(dhKeyGroup,ecdhPubKey, ecdhPubKeyPoint , NULL);
+    ecdsaPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup,(char *)ecdsaPubKey, ecdsaPubKeyPoint , NULL);
+    comPairPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup,(char *)comPairPubKey, comPairPubKeyPoint ,NULL);
+    ecdhPubKeyPoint = EC_POINT_hex2point(dhKeyGroup,(char *)ecdhPubKey, ecdhPubKeyPoint , NULL);
 
     /* Setting the public and private keys */
     EC_KEY_set_public_key(ecdsaKey,ecdsaPubKeyPoint);
@@ -341,89 +343,69 @@ int main(int argc,char *argv[]){
     EC_KEY_set_private_key(ecdsaKey,ecdsaPrivBigNum);
     EC_KEY_set_private_key(dhKey,ecdhPrivBigNum);
 
-
-    /*
-
-
-            Signature operations
-
-
-    */
+    /* Signature operations */
 
     /* Computing signature on ECDH public key */
     unsigned int signatureLen = ECDSA_size(ecdsaKey);
     unsigned char * signature = OPENSSL_malloc(signatureLen);
     unsigned char digestBuff[SHA256_DIGEST_LENGTH];
-    unsigned char * digest = SHA256(ecdhPubKey,strlen(ecdhPubKey), digestBuff);
+    unsigned char * digest = SHA256(ecdhPubKey,strlen((char *)ecdhPubKey), digestBuff);
 
     /* Signing the ECDH public key using the ECDSA */
-    ECDSA_sign(0, digest , SHA256_DIGEST_LENGTH , signature, &signatureLen , ecdsaKey );
-
+    ECDSA_sign(0, digest , SHA256_DIGEST_LENGTH , signature, &signatureLen , ecdsaKey);
 
     /* Writing the signature to the file */
     unsigned char * signHex = malloc(signatureLen*2+1);
     signHex[signatureLen*2]=0;
-    Convert_to_Hex(signHex, signature , signatureLen);
-    Write_File("Signature_Alice.txt",signHex);
+    Convert_to_Hex((char *)signHex, signature , signatureLen);
+    Write_File("Signature_Bob.txt",(char *)signHex);
 
+    /* Network operations */
 
-
-    /*
-
-        Network operations
-
-    */
-
-    /* Sending the ECDH public key and the signature*/
+    /* Sending the ECDH public key and the signature */
     unsigned char * buffer2send = malloc(ecdhPubKeySize+signatureLen);
     memcpy(buffer2send,ecdhPubKey,ecdhPubKeySize);
     memcpy(buffer2send+ecdhPubKeySize , signature , signatureLen);
-    Send_via_ZMQ(buffer2send,ecdhPubKeySize+signatureLen);
 
 
-    /* Receiving */
-
+    /* Receiving the ECDH public key and signature from Alice */
     unsigned char receivBuff[1000];
     unsigned int recvLen;
     unsigned char * recPacket = Receive_via_ZMQ(receivBuff, &recvLen , 1000);
-	
-    // Since the signatue length is variable and there is no structure for sending,
+
+    // Since the signature length is variable and there is no structure for sending,
     // we use the fact that the public key is constant. 
     unsigned int recvSignatureLen = recvLen - ecdhPubKeySize;
 
     unsigned char * recevidPublicKey = malloc(ecdhPubKeySize);
     unsigned char * receivedSignature = malloc(recvSignatureLen);
     memcpy(recevidPublicKey, recPacket,ecdhPubKeySize);
-    memcpy(receivedSignature , recPacket + ecdhPubKeySize, recvSignatureLen);
+    memcpy(receivedSignature , recPacket + ecdhPubKeySize, recvSignatureLen); 
 
+    Send_via_ZMQ(buffer2send , ecdhPubKeySize+signatureLen);
 
-    /* Verifying */
+    /* Verifying the received signature */
     digest = SHA256(recevidPublicKey,ecdhPubKeySize, digestBuff);
 
-    /* Verification is done via the Bob's public key */
     EC_KEY_set_public_key(ecdsaKey,comPairPubKeyPoint);
 
-
     if (ECDSA_verify(0, digest , SHA256_DIGEST_LENGTH , receivedSignature, recvSignatureLen , ecdsaKey )==1){
-
-        Write_File("Verification_Result_Alice.txt","Successful Verification on Alice Side");
+        Write_File("Verification_Result_Bob.txt","Successful Verification on Bob Side");
 
         /* Creating DH key agreement */
-
         /* Converting the received public key to a point */
-        BN_CTX * comPairRecvPubKeyCtx = BN_CTX_new();
-        comPairPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup,recevidPublicKey, comPairPubKeyPoint ,NULL);
-        EC_POINT * multPoint = EC_POINT_new(dhKeyGroup) ; 
+        comPairPubKeyPoint = EC_POINT_hex2point(ecdsaKeyGroup,(char *)recevidPublicKey, comPairPubKeyPoint ,NULL);
+        EC_POINT * multPoint = EC_POINT_new(dhKeyGroup) ;
         EC_POINT_mul(dhKeyGroup, multPoint , NULL, comPairPubKeyPoint, ecdhPrivBigNum , NULL);
 
-        /* Converting the received public key to a point */
-        unsigned char * dhKeyAgreement = EC_POINT_point2hex(dhKeyGroup, multPoint, POINT_CONVERSION_UNCOMPRESSED, NULL); 
-        Write_File("DH_Key_Agreement_Alice.txt",dhKeyAgreement);
-    }
-    else {
-        Write_File("Verification_Result_Alice.txt","Verification Failed on Alice Side");
-    }
+        /* Converting point to hex */
+        unsigned char * dhKeyAgreement = EC_POINT_point2hex(dhKeyGroup, multPoint, POINT_CONVERSION_UNCOMPRESSED, NULL);
+        Write_File("DH_Key_Agreement_Bob.txt",(char *)dhKeyAgreement);
 
+    }else {
+        Write_File("Verification_Result_Bob.txt","Verification Failed on Bob Side");
+    }
+    
     return 0;
-}
+}   
 //__________________________________________________________________________________________________________________________
