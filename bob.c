@@ -327,7 +327,7 @@ int main(int argc,char *argv[]){
     unsigned char *signHex = malloc(siglen*2+1);
     signHex[siglen*2]=0;
     Convert_to_Hex(signHex, signature_Bob, siglen);
-    Write_File("Signature_Alice.txt", signHex);
+    Write_File("Signature_Bob.txt", signHex);
 
     // 4. Bob receives Alice's ECDH public key and her signature on that from Alice
     unsigned char combined_message_received[1000];
